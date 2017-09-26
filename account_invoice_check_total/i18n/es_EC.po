@@ -21,13 +21,13 @@ msgstr ""
 #. module: account_invoice_check_total
 #: model:ir.ui.view,arch_db:account_invoice_check_total.account_config_settings_form_view
 msgid "Check Total"
-msgstr ""
+msgstr "Comprobar total"
 
 #. module: account_invoice_check_total
 #: model:ir.model.fields,field_description:account_invoice_check_total.field_account_config_settings_group_supplier_inv_check_total
 #: model:res.groups,name:account_invoice_check_total.group_supplier_inv_check_total
 msgid "Check Total on Vendor Bills"
-msgstr ""
+msgstr "Comprobar total en facturas de proveedor"
 
 #. module: account_invoice_check_total
 #: model:ir.model,name:account_invoice_check_total.model_account_invoice
@@ -41,13 +41,15 @@ msgid ""
 "Please verify the price of the invoice!\n"
 "                        The encoded total does not match the computed total."
 msgstr ""
+"Por favor, verifique el total de la factura.\n"
+"El total digitado no corresponde con el total calculado."
 
 #. module: account_invoice_check_total
 #: model:ir.model.fields,field_description:account_invoice_check_total.field_account_invoice_check_total
 msgid "Verification Total"
-msgstr ""
+msgstr "Total a verificar"
 
 #. module: account_invoice_check_total
 #: model:ir.model,name:account_invoice_check_total.model_account_config_settings
 msgid "account.config.settings"
-msgstr ""
+msgstr "account.config.settings"
