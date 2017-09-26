@@ -21,6 +21,12 @@ class AccountInvoice(models.Model):
 
     @api.multi
     def action_move_create(self):
+        self.validate_subtotal()
+        return super(AccountInvoice, self).action_move_create()
+
+    @api.multi
+    def validate_subtotal(self):
+        '''hook para poder validar contra otro subtotal'''
         for inv in self:
             if self.env.user.has_group(GROUP_AICT):
                 if inv.type in ('in_invoice', 'in_refund') and\
@@ -31,8 +37,7 @@ class AccountInvoice(models.Model):
                     raise UserError(_(
                         'Please verify the price of the invoice!\n\
                         The encoded total does not match the computed total.'))
-        return super(AccountInvoice, self).action_move_create()
-
+                    
     @api.model
     def _prepare_refund(self, invoice, date_invoice=None,
                         date=None, description=None, journal_id=None):
