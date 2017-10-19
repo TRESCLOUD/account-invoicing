@@ -4,8 +4,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 import logging
 
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo import models
 _logger = logging.getLogger(__name__)
 
 
@@ -31,23 +30,3 @@ class AccountInvoice(models.Model):
             if account:
                 data['account_id'] = account.id
         return data
-
-    @api.multi
-    def action_invoice_open(self):
-        '''
-        Valida que la cantidad de los productos de la nota de credito no sean superiores a las cantidades de la orden de compra.
-        '''
-        default_purchase_id = self._context.get('default_purchase_id', False)
-        for invoice in self:
-            if invoice.type =='in_refund':
-                if default_purchase_id:
-                    for line_order in self.env['purchase.order'].search([('id','=', default_purchase_id )]).mapped('order_line'):
-                        for line_inv in invoice.invoice_line_ids:
-                            if line_inv.product_id == line_order.product_id and\
-                               line_inv.product_id.purchase_method == 'receive' :
-                                if line_inv.quantity > line_order.qty_to_refund or line_inv.quantity <= 0.0:
-                                    raise UserError (u'Por favor verifique: '
-                                                     u'la cantidad de los productos debe ser mayor a 0.'
-                                                     u'la cantidad de los productos no pueden ser superior a la cantidad a retornar de la order de compra %s' % line_order.order_id.name )
-        return super(AccountInvoice, self).action_invoice_open()
-
