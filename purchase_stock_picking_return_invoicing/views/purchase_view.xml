@@ -9,7 +9,8 @@
             <button name="action_view_invoice" position="after">
                 <button type="object" name="action_view_invoice_refund"
                         class="oe_stat_button"
-                        icon="fa-pencil-square-o">
+                        icon="fa-pencil-square-o"
+                        attrs="{'invisible':[('invoice_ids','=',[])]}">
                     <field name="invoice_refund_count" widget="statinfo"
                            string="Refunds"/>
                 </button>
@@ -26,6 +27,21 @@
                 <field name="qty_refunded"
                        invisible="not context.get('show_purchase', False)"/>
             </xpath>
+            <xpath expr="//field[@name='invoice_lines']" position="replace"/>
+			<xpath expr="//page[@name='summary']" position="inside">
+				 <field name="invoice_lines">
+					 <tree string="Invoice lines">
+	                    <field name="name"/>
+	                    <field name="account_id" groups="account.group_account_user"/>
+	                    <field name="quantity"/>
+	                    <field name="uom_id" groups="product.group_uom"/>
+	                    <field name="price_unit"/>
+	                    <field name="discount" groups="base.group_no_one"/>
+	                    <field name="price_subtotal"/>
+	                    <field name="currency_id" invisible="1"/>
+	                </tree>
+				 </field>
+			</xpath>
         </field>
     </record>
 
