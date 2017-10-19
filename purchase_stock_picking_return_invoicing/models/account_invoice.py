@@ -35,7 +35,7 @@ class AccountInvoice(models.Model):
     @api.multi
     def action_invoice_open(self):
         '''
-        Valida que los notas de credito no sean superiores a las cantidades de la orden de compra
+        Valida que la cantidad de los productos de la nota de credito no sean superiores a las cantidades de la orden de compra.
         '''
         default_purchase_id = self._context.get('default_purchase_id', False)
         for invoice in self:
