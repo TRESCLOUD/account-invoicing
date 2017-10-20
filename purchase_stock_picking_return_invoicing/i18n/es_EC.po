@@ -71,7 +71,7 @@ msgstr "Cant. a reembolsar"
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_qty_refunded
 msgid "Refunded Qty"
-msgstr "Cant. Reembolsada"
+msgstr "Cant. reembolsada"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.ui.view,arch_db:purchase_stock_picking_return_invoicing.purchase_order_form
