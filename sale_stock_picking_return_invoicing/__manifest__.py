@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
+
+{
+    'name': 'Sale Stock Picking Return Invoicing',
+    'version': '10.0.1.0.0',
+    'category': 'Sales',
+    'description': '''
+        Característica: 
+            - Agrega una opción para crear notas de debito desde ordenes de venta.
+       
+    ''',
+    'author': 'TRESCLOUD CIA LTDA',
+    'maintainer': 'TRESCLOUD CIA. LTDA.',
+    'website': 'http://www.trescloud.com',
+    'license': 'AGPL-3',
+    'depends': [
+         'sale',
+    ],    
+    'data': [
+        #Data
+        'views/sale_view.xml',
+        #'wizards/stock_return_picking_view.xml'
+    ],
+    'installable': True
+}

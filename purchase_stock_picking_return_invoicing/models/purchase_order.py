@@ -134,12 +134,10 @@ class PurchaseOrderLine(models.Model):
             for inv_line in line.invoice_lines:
                 inv_type = inv_line.invoice_id.type
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state not in  ['draft','cancel'] and  (
-                    (inv_type == 'in_invoice' and invl_q < 0.0) or
-                    (inv_type == 'in_refund' and invl_q > 0.0)
-                ):
-                    qty += inv_line.uom_id._compute_quantity(
-                        inv_line.quantity, line.product_uom)
+                if inv_line.invoice_id.state not in  ['draft','cancel']:
+                    if ((inv_type == 'in_invoice' and invl_q < 0.0) or
+                        (inv_type == 'in_refund' and invl_q > 0.0)):
+                        qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
             line.qty_refunded = qty
 
     @api.depends('order_id.state', 'qty_received', 'qty_invoiced',
