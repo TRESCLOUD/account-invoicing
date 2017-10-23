@@ -7,7 +7,7 @@
     'category': 'Sales',
     'description': '''
         Característica: 
-            - Agrega una opción para crear notas de crédito desde ordenes de venta.
+            - Agrega una opción para crear notas de crédito desde órdenes de venta.
         
         Autores:
             Ing. Andres Calle
