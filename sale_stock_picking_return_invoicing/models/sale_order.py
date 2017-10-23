@@ -2,9 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models
-from odoo.tools.float_utils import float_compare
 import odoo.addons.decimal_precision as dp
-from odoo.tools import float_is_zero, float_compare, DEFAULT_SERVER_DATETIME_FORMAT
+from odoo.tools import float_is_zero
 
 
 class SaleOrder(models.Model):
