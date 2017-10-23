@@ -21,7 +21,7 @@ msgstr ""
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_invoice_refund_count
 msgid "# of Invoice Refunds"
-msgstr ""
+msgstr "# de notas de crédito"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model,name:purchase_stock_picking_return_invoicing.model_account_invoice
@@ -31,67 +31,67 @@ msgstr "Factura"
 #. module: purchase_stock_picking_return_invoicing
 #: selection:purchase.order.line,invoice_status:0
 msgid "Invoice Received"
-msgstr ""
+msgstr "Factura recibida"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_invoice_status
 msgid "Invoice Status"
-msgstr ""
+msgstr "Estado de factura"
 
 #. module: purchase_stock_picking_return_invoicing
 #: selection:purchase.order.line,invoice_status:0
 msgid "Not purchased"
-msgstr ""
+msgstr "No comprada"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model,name:purchase_stock_picking_return_invoicing.model_purchase_order
 msgid "Purchase Order"
-msgstr ""
+msgstr "Orden de compra"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model,name:purchase_stock_picking_return_invoicing.model_purchase_order_line
 msgid "Purchase Order Line"
-msgstr ""
+msgstr "Línea orden de compra"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_stock_return_picking_line_purchase_line_id
 msgid "Purchase order line"
-msgstr ""
+msgstr "Linea de pedido de compra"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_qty_to_invoice
 msgid "Qty to Bill"
-msgstr ""
+msgstr "Cant. a facturar"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_qty_to_refund
 msgid "Qty to Refund"
-msgstr ""
+msgstr "Cant. a reembolsar"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_qty_refunded
 msgid "Refunded Qty"
-msgstr ""
+msgstr "Cant. reembolsada"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.ui.view,arch_db:purchase_stock_picking_return_invoicing.purchase_order_form
 msgid "Refunds"
-msgstr ""
+msgstr "Notas de crédito"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model,name:purchase_stock_picking_return_invoicing.model_stock_return_picking
 msgid "Return Picking"
-msgstr ""
+msgstr "Albarán de devolución"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:purchase_stock_picking_return_invoicing.field_purchase_order_line_qty_returned
 msgid "Returned Qty"
-msgstr ""
+msgstr "Cant. devuelta"
 
 #. module: purchase_stock_picking_return_invoicing
 #: selection:purchase.order.line,invoice_status:0
 msgid "Waiting Invoices"
-msgstr ""
+msgstr "Esperando facturas"
 
 #. module: purchase_stock_picking_return_invoicing
 #: model:ir.model,name:purchase_stock_picking_return_invoicing.model_stock_return_picking_line
