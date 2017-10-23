@@ -29,7 +29,7 @@ class SaleOrder(models.Model):
         action = self.env.ref('account.action_invoice_tree1')
         result = action.read()[0]
         refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
-        result['domain']= [('type', '=', ('out_refund')),[('partner_id','=', self.partner_id.id)]]
+        result['domain']= [('type', '=', ('out_refund')),('partner_id','=', self.partner_id.id)]
         result['context'] = {
             'type': 'out_refund',
             'default_sale_id': self.id
@@ -46,7 +46,7 @@ class SaleOrder(models.Model):
                ctx.update({'type':'out_refund'})
                order.with_context(ctx).action_invoice_refund()
         
-        if len(refunds) != 1:
+        if len(refunds) > 1:
             result['domain'] =  [('id', 'in', refunds.ids)]
         elif len(refunds) == 1:
             result['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
