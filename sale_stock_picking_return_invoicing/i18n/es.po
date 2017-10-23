@@ -43,7 +43,7 @@ msgstr ""
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_returned
 msgid "Returned Qty"
-msgstr Cant. devuelta
+msgstr "Cant. devuelta"
 
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_stock_return_picking_line_sale_line_id
