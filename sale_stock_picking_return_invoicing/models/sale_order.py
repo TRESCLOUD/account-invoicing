@@ -96,7 +96,6 @@ class SaleOrder(models.Model):
                     line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
                 elif line.qty_to_refund < 0 and final:
                     line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
-
             if references.get(invoices.get(group_key)):
                 if order not in references[invoices[group_key]]:
                     references[invoice] = references[invoice] | order
@@ -145,7 +144,7 @@ class SaleOrderLine(models.Model):
             line.qty_refunded = qty
  
     @api.depends('order_id.state',  'qty_invoiced',
-                  'invoice_lines.invoice_id.state', 'invoice_lines.quantity')
+                 'invoice_lines.invoice_id.state', 'invoice_lines.quantity')
     def _compute_qty_to_invoice(self):
         '''
         Obtiene la cantidad a reembolsar
