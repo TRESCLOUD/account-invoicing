@@ -201,7 +201,6 @@ class SaleOrderLine(models.Model):
     qty_refunded = fields.Float(compute='_compute_qty_refunded', string='Refunded Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='')
-
     qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='')
