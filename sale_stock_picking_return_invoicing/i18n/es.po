@@ -1,0 +1,66 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* sale_stock_picking_return_invoicing
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 10.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-22 03:11+0000\n"
+"PO-Revision-Date: 2017-10-22 03:11+0000\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_invoice_refund_count
+msgid "# of Invoice Refunds"
+msgstr "# de notas de crédito"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_to_refund
+msgid "Qty to Refund"
+msgstr "Cant. a reembolsar"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_refunded
+msgid "Refunded Qty"
+msgstr "Cant. reembolsada"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.ui.view,arch_db:sale_stock_picking_return_invoicing.view_order_form_refunds
+msgid "Refunds"
+msgstr "Notas de crédito"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model,name:sale_stock_picking_return_invoicing.model_stock_return_picking
+msgid "Return Picking"
+msgstr "Albarán de devolución"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_returned
+msgid "Returned Qty"
+msgstr "Cant. devuelta"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_stock_return_picking_line_sale_line_id
+msgid "Sale order line"
+msgstr "Línea de orden de venta"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model,name:sale_stock_picking_return_invoicing.model_sale_order
+msgid "Sales Order"
+msgstr "Order de venta"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model,name:sale_stock_picking_return_invoicing.model_sale_order_line
+msgid "Sales Order Line"
+msgstr "Línea de ordenes de venta"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model,name:sale_stock_picking_return_invoicing.model_stock_return_picking_line
+msgid "stock.return.picking.line"
+msgstr "stock.return.picking.line"
