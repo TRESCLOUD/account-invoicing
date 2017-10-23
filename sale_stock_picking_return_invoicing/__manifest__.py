@@ -8,14 +8,20 @@
     'description': '''
         Característica: 
             - Agrega una opción para crear notas de debito desde ordenes de venta.
-       
+        
+        Autores:
+            Ing. Andres Calle
+            Ing. Patricio Rangles
+            Ing. José Miguel Rivero
+            Ing. Santiago Orozco
+            Ing. Víctor Salazar
     ''',
     'author': 'TRESCLOUD CIA LTDA',
     'maintainer': 'TRESCLOUD CIA. LTDA.',
     'website': 'http://www.trescloud.com',
     'license': 'AGPL-3',
     'depends': [
-         'sale',
+         'sale'
     ],    
     'data': [
         #Data

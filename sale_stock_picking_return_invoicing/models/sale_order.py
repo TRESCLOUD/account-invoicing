@@ -11,14 +11,14 @@ class SaleOrder(models.Model):
 
     @api.depends('order_line.invoice_lines.invoice_id.state')
     def _compute_invoice_refund(self):
+         '''
+         Obtiene el número de notas de crédito
+         '''
          for order in self:
              invoices = self.env['account.invoice']
              for line in order.order_line:
                  invoices |= line.invoice_lines.mapped('invoice_id').filtered(lambda x: x.type == 'out_refund')
              order.invoice_refund_count = len(invoices)
-
-    #Column
-    invoice_refund_count = fields.Integer(compute="_compute_invoice_refund", string='# of Invoice Refunds',copy=False, default=0)
 
     @api.multi
     def action_view_invoice_refund(self):
@@ -33,7 +33,6 @@ class SaleOrder(models.Model):
             'type': 'out_refund',
             'default_sale_id': self.id
         }
-        #if not refunds:
         for order in self:
             create = False 
             for line in order.order_line:
@@ -44,7 +43,6 @@ class SaleOrder(models.Model):
                ctx = self._context.copy()
                ctx.update({'type':'out_refund'})
                order.with_context(ctx).action_invoice_refund()
-        
         if len(refunds) > 1:
             result['domain'] =  [('id', 'in', refunds.ids)]
         elif len(refunds) == 1:
@@ -65,6 +63,7 @@ class SaleOrder(models.Model):
             result['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
             result['res_id'] = invoices.id
         return result
+    
     @api.multi
     def action_invoice_refund(self, grouped=False, final=False):
         '''
@@ -121,12 +120,15 @@ class SaleOrder(models.Model):
              res.update({'journal_id': journal_id})
         return res
 
+    #Column
+    invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
+                                          help='')
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    @api.depends('invoice_lines.invoice_id.state',
-                  'invoice_lines.quantity')
+    @api.depends('invoice_lines.invoice_id.state','invoice_lines.quantity')
     def _compute_qty_refunded(self):
          for line in self:
              qty = 0.0
@@ -185,10 +187,10 @@ class SaleOrderLine(models.Model):
     qty_to_refund = fields.Float(compute='_compute_qty_to_invoice', string='Qty to Refund', copy=False, default=0.0,
                                  digits=dp.get_precision('Product Unit of Measure'),
                                  help='')
-    qty_refunded = fields.Float(compute="_compute_qty_refunded", string='Refunded Qty', copy=False, default=0.0,
+    qty_refunded = fields.Float(compute='_compute_qty_refunded', string='Refunded Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='')
 
-    qty_returned = fields.Float(compute="_compute_qty_returned", string='Returned Qty', copy=False, default=0.0,
+    qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='')

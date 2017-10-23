@@ -18,7 +18,7 @@ msgstr ""
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_invoice_refund_count
 msgid "# of Invoice Refunds"
-msgstr ""
+msgstr "# de notas de crédito"
 
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_to_refund
@@ -38,7 +38,7 @@ msgstr "Notas de crédito"
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model,name:sale_stock_picking_return_invoicing.model_stock_return_picking
 msgid "Return Picking"
-msgstr ""
+msgstr "Albarán de devolución"
 
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_line_qty_returned
@@ -48,7 +48,7 @@ msgstr "Cant. devuelta"
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_stock_return_picking_line_sale_line_id
 msgid "Sale order line"
-msgstr "Linea de orden de venta"
+msgstr "Línea de orden de venta"
 
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model,name:sale_stock_picking_return_invoicing.model_sale_order
@@ -58,9 +58,9 @@ msgstr "Order de venta"
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model,name:sale_stock_picking_return_invoicing.model_sale_order_line
 msgid "Sales Order Line"
-msgstr "Linea de ordenes de venta"
+msgstr "Línea de ordenes de venta"
 
 #. module: sale_stock_picking_return_invoicing
 #: model:ir.model,name:sale_stock_picking_return_invoicing.model_stock_return_picking_line
 msgid "stock.return.picking.line"
-msgstr ""
+msgstr "stock.return.picking.line"
