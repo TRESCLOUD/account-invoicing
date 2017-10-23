@@ -7,7 +7,7 @@
     'category': 'Sales',
     'description': '''
         Característica: 
-            - Agrega una opción para crear notas de debito desde ordenes de venta.
+            - Agrega una opción para crear notas de crédito desde ordenes de venta.
         
         Autores:
             Ing. Andres Calle
@@ -26,7 +26,6 @@
     'data': [
         #Data
         'views/sale_view.xml',
-        #'wizards/stock_return_picking_view.xml'
     ],
     'installable': True
 }

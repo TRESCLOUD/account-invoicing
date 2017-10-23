@@ -130,41 +130,49 @@ class SaleOrderLine(models.Model):
 
     @api.depends('invoice_lines.invoice_id.state','invoice_lines.quantity')
     def _compute_qty_refunded(self):
-         for line in self:
-             qty = 0.0
-             for inv_line in line.invoice_lines:
-                 inv_type = inv_line.invoice_id.type
-                 invl_q = inv_line.quantity
-                 if inv_line.invoice_id.state not in  ['draft','cancel']:
-                     if ((inv_type == 'out_invoice' and invl_q < 0.0) or
-                         (inv_type == 'out_refund' and invl_q > 0.0)):
-                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
-             line.qty_refunded = qty
+        '''
+        Obtiene la cantidad reembolsada 
+        '''
+        for line in self:
+            qty = 0.0
+            for inv_line in line.invoice_lines:
+                inv_type = inv_line.invoice_id.type
+                invl_q = inv_line.quantity
+                if inv_line.invoice_id.state not in  ['draft','cancel']:
+                    if ((inv_type == 'out_invoice' and invl_q < 0.0) or
+                        (inv_type == 'out_refund' and invl_q > 0.0)):
+                        qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
+            line.qty_refunded = qty
  
     @api.depends('order_id.state',  'qty_invoiced',
                   'invoice_lines.invoice_id.state', 'invoice_lines.quantity')
     def _compute_qty_to_invoice(self):
-          precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-          for line in self:
-              line.qty_to_refund = 0.0
-              if line.order_id.state not in ('sale', 'done'):
-                  line.invoice_status = 'no'
-                  continue
-              else:
-                  if line.product_id.purchase_method == 'receive':
-                      qty = (line.product_uom_qty - line.qty_returned) - \
-                            (line.qty_invoiced - line.qty_refunded)
-                      if qty >= 0.0:
-                        line.qty_to_invoice = qty
-                      else:
-                         line.qty_to_refund = abs(qty)
-                  else:
-                      line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
-                      line.qty_to_refund = 0.0
+        '''
+        Obtiene la cantidad a reembolsar
+        '''
+        for line in self:
+            line.qty_to_refund = 0.0
+            if line.order_id.state not in ('sale', 'done'):
+                line.invoice_status = 'no'
+                continue
+            else:
+                if line.product_id.purchase_method == 'receive':
+                    qty = (line.product_uom_qty - line.qty_returned) - \
+                          (line.qty_invoiced - line.qty_refunded)
+                    if qty >= 0.0:
+                      line.qty_to_invoice = qty
+                    else:
+                       line.qty_to_refund = abs(qty)
+                else:
+                    line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
+                    line.qty_to_refund = 0.0
 
     @api.depends('order_id.state', 'procurement_ids.move_ids.state')
     def _compute_qty_returned(self):
-         for line in self:
+        '''
+        Obtiene la cantidad devuelta
+        '''
+        for line in self:
              line.qty_returned = 0.0
              qty = 0.0
              for move in line.procurement_ids.mapped('move_ids'):
@@ -174,6 +182,9 @@ class SaleOrderLine(models.Model):
 
     @api.multi
     def _prepare_invoice_line(self, qty):
+        '''
+        Modifica el valor de cantidad de la factura con la cantidad a devolver.
+        '''
         res = super(SaleOrderLine, self)._prepare_invoice_line(qty)
         if self.product_id.purchase_method == 'receive':
             qty = (self.product_uom_qty - self.qty_returned) - (self.qty_invoiced - self.qty_refunded)
