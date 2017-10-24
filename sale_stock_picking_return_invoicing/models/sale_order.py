@@ -97,6 +97,7 @@ class SaleOrder(models.Model):
                 invoice = inv_obj.create(inv_data)
                 references[invoice] = order
                 invoices[group_key] = invoice
+                line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
         if invoices:            
             if invoice:
                 invoice.compute_taxes()
