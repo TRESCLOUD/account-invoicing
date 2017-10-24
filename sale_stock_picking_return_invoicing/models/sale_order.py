@@ -128,10 +128,7 @@ class SaleOrder(models.Model):
         if type == 'out_refund':
             res.update({'type':'out_refund'})
             #diario
-            journal_domain = [
-                ('type', '=', 'sale'),
-                ('company_id', '=', self.company_id.id)
-            ]
+            journal_domain = [('type', '=', 'sale'),('company_id', '=', self.company_id.id)]
             journal = self.env['account.journal'].search(journal_domain, limit=1)
             if journal:
                 res.update({'journal_id': journal.id})
@@ -208,7 +205,8 @@ class SaleOrderLine(models.Model):
             res['quantity'] = qty
         type = self._context.get('type',False)
         if type == 'out_refund':
-            account = self.product_id.property_account_customer_refund or self.product_id.categ_id.property_account_customer_refund_categ
+            account = self.product_id.property_account_customer_refund or \
+                      self.product_id.categ_id.property_account_customer_refund_categ or False
             if account:
                 res['account_id'] = account.id
             res['quantity'] *= -1.0
