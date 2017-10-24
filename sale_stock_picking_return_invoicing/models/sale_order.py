@@ -93,11 +93,25 @@ class SaleOrder(models.Model):
             for line in order.order_line.filtered(lambda l: l.qty_to_refund > 0):
                 if float_is_zero(line.qty_to_refund, precision_digits=precision):
                     continue
-                inv_data = order._prepare_invoice()
-                invoice = inv_obj.create(inv_data)
-                references[invoice] = order
-                invoices[group_key] = invoice
-                line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
+                if group_key not in invoices:
+                    inv_data = order._prepare_invoice()
+                    invoice = inv_obj.create(inv_data)
+                    references[invoice] = order
+                    invoices[group_key] = invoice
+                elif group_key in invoices:
+                    vals = {}
+                    if order.name not in invoices[group_key].origin.split(', '):
+                        vals['origin'] = invoices[group_key].origin + ', ' + order.name
+                    if order.client_order_ref and order.client_order_ref not in invoices[group_key].name.split(', ') and order.client_order_ref != invoices[group_key].name:
+                        vals['name'] = invoices[group_key].name + ', ' + order.client_order_ref
+                    invoices[group_key].write(vals)
+                if line.qty_to_refund > 0:
+                    line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
+                elif line.qty_to_refund < 0 and final:
+                    line.invoice_line_create(invoices[group_key].id, line.qty_to_refund)
+            if references.get(invoices.get(group_key)):
+                if order not in references[invoices[group_key]]:
+                    references[invoice] = references[invoice] | order
         if invoices:            
             if invoice:
                 invoice.compute_taxes()
