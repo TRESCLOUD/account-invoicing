@@ -19,7 +19,20 @@ class SaleOrder(models.Model):
              for line in order.order_line:
                  invoices |= line.invoice_lines.mapped('invoice_id').filtered(lambda x: x.type == 'out_refund')
              order.invoice_refund_count = len(invoices)
-
+             
+    @api.depends('state', 'order_line.invoice_status')
+    def _get_invoiced(self):
+        '''
+        obtiene el número de facturas asociados a la orden de venta.
+        '''
+        super(SaleOrder, self)._get_invoiced()
+        for order in self:
+            invoice_ids = order.order_line.mapped('invoice_lines').mapped('invoice_id').filtered(lambda r: r.type in ['out_invoice'])
+            order.update({
+                'invoice_count': len(set(invoice_ids.ids)),
+                'invoice_ids': invoice_ids.ids
+            })
+            
     @api.multi
     def action_view_invoice_refund(self):
         '''
@@ -112,11 +125,13 @@ class SaleOrder(models.Model):
         '''
         res = super(SaleOrder, self)._prepare_invoice()
         type = self._context.get('type',False)
-        journal_id =  self._context.get('default_journal_id',False) 
         if type == 'out_refund':
             res.update({'type':'out_refund'})
-        if journal_id:
-             res.update({'journal_id': journal_id})
+            #diario
+            journal_domain = [('type', '=', 'sale'),('company_id', '=', self.company_id.id)]
+            journal = self.env['account.journal'].search(journal_domain, limit=1)
+            if journal:
+                res.update({'journal_id': journal.id})
         return res
 
     #Column
@@ -190,6 +205,10 @@ class SaleOrderLine(models.Model):
             res['quantity'] = qty
         type = self._context.get('type',False)
         if type == 'out_refund':
+            account = self.product_id.property_account_customer_refund or \
+                      self.product_id.categ_id.property_account_customer_refund_categ or False
+            if account:
+                res['account_id'] = account.id
             res['quantity'] *= -1.0
         return res
         
