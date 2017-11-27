@@ -37,7 +37,7 @@ class SaleOrder(models.Model):
     @api.multi
     def action_view_invoice_refund(self):
         '''
-        Metodo llamana a la funcion de crear notas de credito en ventas.
+        Metodo llamana a la funcion de crear notas de credito en ventas, siempre que exista cantidad a reembolsar.
         '''
         ctx = self._context.copy()
         invoice_ids = self.invoice_ids.filtered(lambda x: x.type == 'out_invoice' and x.state not in ('cancel','draft')).mapped('id')
@@ -47,7 +47,7 @@ class SaleOrder(models.Model):
         result['domain']= [('type', '=', ('out_refund')),('partner_id','=', self.partner_id.id)]
         result['context'] = {
             'type': 'out_refund',
-            'default_sale_id': self.id,
+            'default_sale_id': self.id
         }
         for order in self:
             create = False 
@@ -85,7 +85,7 @@ class SaleOrder(models.Model):
         '''
         Crea las notas de credito asociadas a las orden de venta.
         basado en el codigo de action_invoice_create. no se realiza super por que el metodo 
-        tiene la logica de crear las lineas de la factura si el qty_to_invoice es diferente de 0.
+        tiene la logica de crear las lineas de la factura si el cantidad a reembolsar es diferente de cero.
         '''
         inv_obj = self.env['account.invoice']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -123,8 +123,7 @@ class SaleOrder(models.Model):
     @api.multi
     def _prepare_invoice(self):
         '''
-        se actualiza la lineas de la factura para que  tipo notas de credito.
-        el core en su codigo esta quemado el tipo out_invoice.
+        se actualiza la lineas de la factura para setear campos por defecto.
         '''
         res = super(SaleOrder, self)._prepare_invoice()
         ctx = self._context.copy()
