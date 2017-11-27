@@ -85,7 +85,7 @@ class SaleOrder(models.Model):
         '''
         Crea las notas de credito asociadas a las orden de venta.
         basado en el codigo de action_invoice_create. no se realiza super por que el metodo 
-        tiene la logica de crear las lineas de la factura si el cantidad a reembolsar es diferente de cero.
+        tiene la logica de crear las lineas de la factura si la cantidad a reembolsar es diferente de cero.
         '''
         inv_obj = self.env['account.invoice']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -126,9 +126,7 @@ class SaleOrder(models.Model):
         se actualiza la lineas de la factura para setear campos por defecto.
         '''
         res = super(SaleOrder, self)._prepare_invoice()
-        ctx = self._context.copy()
-        type = ctx.get('type',False)
-        if type == 'out_refund':
+        if self.env.context.get('type',False) == 'out_refund':
             invoice = self.env['account.invoice'].browse(self.env.context.get('default_invoice_rectification_id',False))
             res.update({'type':'out_refund',
                         'default_invoice_rectification_id': invoice.id,
