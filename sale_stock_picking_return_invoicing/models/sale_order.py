@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 import odoo.addons.decimal_precision as dp
 from odoo.tools import float_is_zero
 
@@ -36,11 +37,13 @@ class SaleOrder(models.Model):
     @api.multi
     def action_view_invoice_refund(self):
         '''
-        Metodo llamana a la funcion de crear notas de credito en ventas.
+        Metodo llamana a la funcion de crear notas de credito en ventas, siempre que exista cantidad a reembolsar.
         '''
+        ctx = self._context.copy()
+        invoice_ids = self.invoice_ids.filtered(lambda x: x.type == 'out_invoice' and x.state not in ('cancel','draft')).mapped('id')
+        ctx.update({'default_invoice_rectification_id': invoice_ids[0]})
         action = self.env.ref('account.action_invoice_tree1')
         result = action.read()[0]
-        refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
         result['domain']= [('type', '=', ('out_refund')),('partner_id','=', self.partner_id.id)]
         result['context'] = {
             'type': 'out_refund',
@@ -53,14 +56,14 @@ class SaleOrder(models.Model):
                     create = True
                     break
             if create:
-               ctx = self._context.copy()
                ctx.update({'type':'out_refund'})
                order.with_context(ctx).action_invoice_refund()
-        if len(refunds) > 1:
-            result['domain'] =  [('id', 'in', refunds.ids)]
-        elif len(refunds) == 1:
-            result['views'] = [(self.env.ref('account.invoice_form').id, 'form')]
+        refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
+        if len(refunds) == 1:
+            result['views'] = [(self.with_context(ctx).env.ref('account.invoice_form').id, 'form')]
             result['res_id'] = refunds.id
+        else:
+            result['domain'] = [('id', 'in', refunds.ids)]
         return result
 
     @api.multi
@@ -82,7 +85,7 @@ class SaleOrder(models.Model):
         '''
         Crea las notas de credito asociadas a las orden de venta.
         basado en el codigo de action_invoice_create. no se realiza super por que el metodo 
-        tiene la logica de crear las lineas de la factura si el qty_to_invoice es diferente de 0.
+        tiene la logica de crear las lineas de la factura si la cantidad a reembolsar es diferente de cero.
         '''
         inv_obj = self.env['account.invoice']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -120,13 +123,18 @@ class SaleOrder(models.Model):
     @api.multi
     def _prepare_invoice(self):
         '''
-        se actualiza la lineas de la factura para que seade tipo notas de credito.
-        el core en su codigo esta quemado el tipo out_invoice.
+        se actualiza la lineas de la factura para setear campos por defecto.
         '''
         res = super(SaleOrder, self)._prepare_invoice()
-        type = self._context.get('type',False)
-        if type == 'out_refund':
-            res.update({'type':'out_refund'})
+        if self.env.context.get('type',False) == 'out_refund':
+            invoice = self.env['account.invoice'].browse(self.env.context.get('default_invoice_rectification_id',False))
+            res.update({'type':'out_refund',
+                        'default_invoice_rectification_id': invoice.id,
+                        'user_id': invoice.user_id.id,
+                        'team_id': invoice.team_id.id,
+                        'name': u'Devolución de mercadería',
+                        'payment_method_id': invoice.payment_method_id.id
+            })
             #diario
             journal_domain = [('type', '=', 'sale'),('company_id', '=', self.company_id.id)]
             journal = self.env['account.journal'].search(journal_domain, limit=1)
