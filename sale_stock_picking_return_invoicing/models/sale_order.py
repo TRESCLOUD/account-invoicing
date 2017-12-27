@@ -41,7 +41,7 @@ class SaleOrder(models.Model):
         '''
         ctx = self._context.copy()
         invoice_ids = self.invoice_ids.filtered(lambda x: x.type == 'out_invoice' and x.state not in ('cancel','draft')).mapped('id')
-        ctx.update({'default_invoice_rectification_id': invoice_ids[0]})
+        ctx.update({'default_invoice_rectification_id': invoice_ids[0] if invoice_ids else []})
         action = self.env.ref('account.action_invoice_tree1')
         result = action.read()[0]
         result['domain']= [('type', '=', ('out_refund')),('partner_id','=', self.partner_id.id)]
@@ -149,7 +149,19 @@ class SaleOrder(models.Model):
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
-
+    
+    @api.multi
+    def _get_delivered_qty(self):
+        '''
+        Metodo modifica la cantidad entregada en el pedido de ventas,
+        manteniendo el valor entregado una vez registrada la devolucion.
+        '''
+        self.ensure_one()
+        qty = super(SaleOrderLine, self)._get_delivered_qty()
+        if qty and self.qty_returned:
+            qty += self.qty_returned
+        return qty
+    
     @api.depends('invoice_lines.invoice_id.state','invoice_lines.quantity')
     def _compute_qty_refunded(self):
         '''
@@ -160,11 +172,24 @@ class SaleOrderLine(models.Model):
             for inv_line in line.invoice_lines:
                 inv_type = inv_line.invoice_id.type
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state not in  ['draft','cancel']:
+                if inv_line.invoice_id.state != 'cancel':
                     if ((inv_type == 'out_invoice' and invl_q < 0.0) or
                         (inv_type == 'out_refund' and invl_q > 0.0)):
                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
             line.qty_refunded = qty
+    
+    @api.depends('invoice_lines.invoice_id.state', 'invoice_lines.quantity')
+    def _get_invoice_qty(self):
+        super(SaleOrderLine, self)._get_invoice_qty()
+        for line in self:
+            qty = 0.0
+            for inv_line in line.invoice_lines:
+                invl_q = inv_line.quantity
+                if inv_line.invoice_id.state != 'cancel':
+                    if ((inv_line.invoice_id.type == 'out_invoice' and invl_q > 0.0) or
+                        (inv_line.invoice_id.type == 'out_refund' and invl_q < 0.0)):
+                        qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
+            line.qty_invoiced = qty
  
     @api.depends('order_id.state',  'qty_invoiced',
                  'invoice_lines.invoice_id.state', 'invoice_lines.quantity')
@@ -179,8 +204,7 @@ class SaleOrderLine(models.Model):
                 continue
             else:
                 if line.product_id.purchase_method == 'receive':
-                    qty = (line.product_uom_qty - line.qty_returned) - \
-                          (line.qty_invoiced - line.qty_refunded)
+                    qty = (line.product_uom_qty - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
                     if qty >= 0.0:
                       line.qty_to_invoice = qty
                     else:

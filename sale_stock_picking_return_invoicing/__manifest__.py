@@ -21,7 +21,8 @@
     'website': 'http://www.trescloud.com',
     'license': 'AGPL-3',
     'depends': [
-         'sale'
+         'sale',
+         'sale_stock'
     ],    
     'data': [
         #Data

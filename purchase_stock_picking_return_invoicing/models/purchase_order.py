@@ -60,9 +60,12 @@ class PurchaseOrder(models.Model):
         action = self.env.ref('account.action_invoice_tree2')
         result = action.read()[0]
         refunds = self.invoice_ids.filtered(lambda x: x.type == 'in_refund')
+        invoice_ids = self.invoice_ids.filtered(lambda x: x.type == 'in_invoice' and x.state not in ('cancel','draft')).mapped('id')
         # override the context to get rid of the default filtering
         result['context'] = {'type': 'in_refund',
-                             'default_purchase_id': self.id}
+                             'default_purchase_id': self.id,
+                             'default_invoice_rectification_id': invoice_ids[0] if invoice_ids else [],
+                             }
 
         if not refunds:
             # Choose a default account journal in the
