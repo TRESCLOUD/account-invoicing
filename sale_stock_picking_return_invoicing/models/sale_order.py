@@ -265,16 +265,19 @@ class SaleOrderLine(models.Model):
             line.qty_to_deliver = total
     
     #columns
+    qty_delivered = fields.Float(help='Cantidad total entregada al cliente.')
+    qty_to_invoice = fields.Float(help='Cantidad pendiente de facturar.')
     qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver', copy=False, store=True,
                                   digits=dp.get_precision('Product Unit of Measure'),
                                   string="Qty to deliver",
-                                  help='')
+                                  help='Cantidad pendiente de despachar.')
     qty_to_refund = fields.Float(compute='_get_to_invoice_qty', string='Qty to Refund', copy=False, default=0.0,
                                  digits=dp.get_precision('Product Unit of Measure'),
-                                 help='')
+                                 help='Cantidad pendiente a reembolsar, se genera cuando'
+                                      ' la cantidad facturada es superior a la cantidad entregada con sus devoluciones.')
     qty_refunded = fields.Float(compute='_compute_qty_refunded', string='Refunded Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
-                                help='')
+                                help='Cantidad reembolsada en la nota de crédito.')
     qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
-                                help='')
+                                help='Cantidad devuelta desde bodega.')
