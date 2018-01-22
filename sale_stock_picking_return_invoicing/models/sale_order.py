@@ -181,6 +181,9 @@ class SaleOrderLine(models.Model):
     
     @api.depends('invoice_lines.invoice_id.state', 'invoice_lines.quantity')
     def _get_invoice_qty(self):
+        '''
+        Obtenemos el valor facturado
+        '''
         super(SaleOrderLine, self)._get_invoice_qty()
         for line in self:
             qty = 0.0
@@ -194,6 +197,9 @@ class SaleOrderLine(models.Model):
  
     @api.depends('qty_invoiced', 'qty_delivered', 'product_uom_qty', 'order_id.state')
     def _get_to_invoice_qty(self):
+        '''
+        modificamos el campo a facturar y a reembolsar.
+        '''
         super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
             if line.order_id.state in ['sale', 'done']:
@@ -244,6 +250,10 @@ class SaleOrderLine(models.Model):
 
     @api.depends('order_id.state', 'procurement_ids.move_ids.state', 'product_uom_qty')
     def _compute_qty_to_deliver(self):
+        '''
+        Agregamos el campo intermedio, a entregar, el metodo suma las movimientos de inventario 
+        diferentes a cancelado y hecho.
+        '''
         for line in self:
             total = 0.0
             for move in line.procurement_ids.mapped('move_ids').filtered(
@@ -255,11 +265,10 @@ class SaleOrderLine(models.Model):
             line.qty_to_deliver = total
     
     #columns
-    qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver',
-                                  digits=dp.get_precision(
-                                      'Product Unit of Measure'),
-                                  copy=False,
-                                  string="Qty to deliver", store=True)
+    qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver', copy=False, store=True,
+                                  digits=dp.get_precision('Product Unit of Measure'),
+                                  string="Qty to deliver",
+                                  help='')
     qty_to_refund = fields.Float(compute='_get_to_invoice_qty', string='Qty to Refund', copy=False, default=0.0,
                                  digits=dp.get_precision('Product Unit of Measure'),
                                  help='')
