@@ -283,5 +283,5 @@ class SaleOrderLine(models.Model):
                                 help='Se calcula con la suma de las notas de crédito emitidas.')
     qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
-                                help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de ingreso a bodega '
+                                help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
                                      'en estado realizado.')
