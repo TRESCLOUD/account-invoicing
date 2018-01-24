@@ -17,6 +17,7 @@ def actualizar_lineas_orden_venta(env):
     sale_order_line = env['sale.order.line'].search([])
     
     for line in sale_order_line:
+        line.qty_delivered = line._get_delivered_qty()
         line._compute_qty_to_deliver()
         line._compute_qty_returned()
         line._get_to_invoice_qty()
