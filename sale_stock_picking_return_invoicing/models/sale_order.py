@@ -160,20 +160,21 @@ class SaleOrderLine(models.Model):
         qty = super(SaleOrderLine, self)._get_delivered_qty()
         for move in self.procurement_ids.mapped('move_ids').filtered(lambda r: r.state == 'done' and not r.scrapped):
             if move.location_dest_id.usage != "customer" and move.to_refund_so:
+                #revertimos la operacion original para mantener la cantidad entregada.
                 qty += move.product_uom._compute_quantity(move.product_uom_qty, self.product_uom)
         return qty
     
     @api.depends('invoice_lines.invoice_id.state','invoice_lines.quantity')
     def _compute_qty_refunded(self):
         '''
-        Obtiene la cantidad reembolsada 
+        Obtiene la cantidad reembolsada.
         '''
         for line in self:
             qty = 0.0
             for inv_line in line.invoice_lines:
                 inv_type = inv_line.invoice_id.type
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state != 'cancel':
+                if inv_line.invoice_id.state in ('open','paid'):
                     if ((inv_type == 'out_invoice' and invl_q < 0.0) or
                         (inv_type == 'out_refund' and invl_q > 0.0)):
                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
@@ -182,14 +183,16 @@ class SaleOrderLine(models.Model):
     @api.depends('invoice_lines.invoice_id.state', 'invoice_lines.quantity')
     def _get_invoice_qty(self):
         '''
-        Obtenemos el valor facturado
+        Obtenemos la cantidad facturada, se sobre escribe por completo el metodo del core.
+        el core resta la cantidad facturada menos las notas de credito, funcion que sera remplazada
+        manteniendo dos columnas Facturado y  cantidad reembolsada.
         '''
         super(SaleOrderLine, self)._get_invoice_qty()
         for line in self:
             qty = 0.0
             for inv_line in line.invoice_lines:
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state != 'cancel':
+                if inv_line.invoice_id.state in ('open','paid'):
                     if ((inv_line.invoice_id.type == 'out_invoice' and invl_q > 0.0) or
                         (inv_line.invoice_id.type == 'out_refund' and invl_q < 0.0)):
                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
@@ -198,7 +201,9 @@ class SaleOrderLine(models.Model):
     @api.depends('qty_invoiced', 'qty_delivered', 'product_uom_qty', 'order_id.state')
     def _get_to_invoice_qty(self):
         '''
-        modificamos el campo a facturar y a reembolsar.
+        hacemos super al metodo por si en el core existe una restriccion,
+        se sobre escribe el metodo agregando una nueva logica para  modificar el campo a facturar y a reembolsar.
+        en base a las politicas de facturacion.
         '''
         super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
@@ -209,7 +214,7 @@ class SaleOrderLine(models.Model):
                       line.qty_to_invoice = qty
                     else:
                       line.qty_to_refund = abs(qty)
-                else:
+                elif line.product_id.invoice_policy == 'delivery':
                     line.qty_to_invoice = line.qty_delivered - line.qty_invoiced
                     line.qty_to_refund = 0.0
             else:
@@ -219,7 +224,7 @@ class SaleOrderLine(models.Model):
     @api.depends('order_id.state', 'procurement_ids.move_ids.state')
     def _compute_qty_returned(self):
         '''
-        Obtiene la cantidad devuelta
+        Obtiene la cantidad devuelta en base al movimientos de los grupos de abastecimientos.
         '''
         for line in self:
              line.qty_returned = 0.0
@@ -232,7 +237,8 @@ class SaleOrderLine(models.Model):
     @api.multi
     def _prepare_invoice_line(self, qty):
         '''
-        Modifica el valor de cantidad de la factura con la cantidad a devolver.
+        preparamos las lineas de la factura, setea el valor de cantidad de la factura con la cantidad a devolver.
+        para las notas de credito.
         '''
         res = super(SaleOrderLine, self)._prepare_invoice_line(qty)
         if self.product_id.purchase_method == 'receive':
@@ -256,8 +262,7 @@ class SaleOrderLine(models.Model):
         '''
         for line in self:
             total = 0.0
-            for move in line.procurement_ids.mapped('move_ids').filtered(
-                        lambda m: m.state not in ('cancel', 'done')):
+            for move in line.procurement_ids.mapped('move_ids').filtered(lambda m: m.state not in ('cancel', 'done')):
                 if move.product_uom != line.product_uom:
                     total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
                 else:
@@ -265,23 +270,35 @@ class SaleOrderLine(models.Model):
             line.qty_to_deliver = total
     
     #columns
-    qty_delivered = fields.Float(help='Cantidad total entregada al cliente, se obtiene en base a la cantidad pedida ya gestionada desde bodega.')
+    qty_delivered = fields.Float(help='Cantidad total entregada al cliente, se obtiene en base a la cantidad '
+                                      'pedida ya gestionada desde bodega.')
     qty_to_invoice = fields.Float(help='Cantidad pendiente de facturar, se calcula en base a la siguente fórmula:'
                                       '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)')
-    qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver', copy=False, store=True,
+    qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver',
+                                  copy=False,
+                                  store=True,
                                   digits=dp.get_precision('Product Unit of Measure'),
                                   string="Qty to deliver",
                                   help='Cantidad pendiente de despachar, se calcula en base a los movimientos de devolución de mercaderia'
                                        ' y salida de bodega pendientes de realizar.')
-    qty_to_refund = fields.Float(compute='_get_to_invoice_qty', string='Qty to Refund', copy=False, default=0.0,
+    qty_to_refund = fields.Float(compute='_get_to_invoice_qty',
+                                 string='Qty to Refund',
+                                 copy=False,
+                                 default=0.0,
                                  digits=dp.get_precision('Product Unit of Measure'),
                                  help='Cantidad pendiente a reembolsar, Se calcula cuando la siguente fórmula retorna un valor negativo:'
                                      '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
                                       'En base a Cant. a reembolsar se genera la nota de crédito.')
-    qty_refunded = fields.Float(compute='_compute_qty_refunded', string='Refunded Qty', copy=False, default=0.0,
+    qty_refunded = fields.Float(compute='_compute_qty_refunded',
+                                string='Refunded Qty',
+                                copy=False,
+                                default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
-                                help='Se calcula con la suma de las notas de crédito emitidas.')
-    qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
+                                help='Se calcula con la suma de las facturas con cantidad negativas.')
+    qty_returned = fields.Float(compute='_compute_qty_returned',
+                                string='Returned Qty',
+                                copy=False,
+                                default=0.0,
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
                                      'en estado realizado.')
