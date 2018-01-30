@@ -159,7 +159,7 @@ class SaleOrderLine(models.Model):
         self.ensure_one()
         qty = super(SaleOrderLine, self)._get_delivered_qty()
         for move in self.procurement_ids.mapped('move_ids').filtered(lambda r: r.state == 'done' and not r.scrapped):
-            if move.location_dest_id.usage != "customer" and move.to_refund_so:
+            if move.location_dest_id.usage != "customer":
                 #revertimos la operacion original para mantener la cantidad entregada.
                 qty += move.product_uom._compute_quantity(move.product_uom_qty, self.product_uom)
         return qty
@@ -217,7 +217,7 @@ class SaleOrderLine(models.Model):
                 elif line.product_id.invoice_policy == 'delivery':
                     line.qty_to_invoice = line.qty_delivered - line.qty_invoiced
                     line.qty_to_refund = 0.0
-            else:
+            else:#actualizamos a nada que factura a los estados de cotizacion y cancelado.
                 line.invoice_status = 'no'
                 continue
 
@@ -234,39 +234,14 @@ class SaleOrderLine(models.Model):
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
 
-    @api.multi
-    def _prepare_invoice_line(self, qty):
-        '''
-        preparamos las lineas de la factura, setea el valor de cantidad de la factura con la cantidad a devolver.
-        para las notas de credito.
-        '''
-        res = super(SaleOrderLine, self)._prepare_invoice_line(qty)
-        if self.product_id.purchase_method == 'receive':
-            qty = (self.product_uom_qty - self.qty_returned) - (self.qty_invoiced - self.qty_refunded)
-            res['quantity'] = qty
-        type = self._context.get('type',False)
-        if type == 'out_refund':
-            account = self.product_id.property_account_customer_refund or \
-                      self.product_id.categ_id.property_account_customer_refund_categ or False
-            if account:
-                res['account_id'] = account.id
-            res['quantity'] *= -1.0
-        return res
-    
-
     @api.depends('order_id.state', 'procurement_ids.move_ids.state', 'product_uom_qty')
     def _compute_qty_to_deliver(self):
         '''
-        Agregamos el campo intermedio, a entregar, el metodo suma las movimientos de inventario 
-        diferentes a cancelado y hecho.
+        Agregamos el campo intermedio, a entregar, el metodo resta la cantidad vendida menos la catidad despachada.
         '''
         for line in self:
-            total = 0.0
-            for move in line.procurement_ids.mapped('move_ids').filtered(lambda m: m.state not in ('cancel', 'done')):
-                if move.product_uom != line.product_uom:
-                    total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
-                else:
-                    total += move.product_uom_qty
+            total = line.product_uom_qty - line.qty_delivered
+            total = max(total,0)
             line.qty_to_deliver = total
     
     #columns
@@ -302,3 +277,8 @@ class SaleOrderLine(models.Model):
                                 digits=dp.get_precision('Product Unit of Measure'),
                                 help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
                                      'en estado realizado.')
+    
+class StockReturnPickingLine(models.TransientModel):
+    _inherit = "stock.return.picking.line"
+
+    to_refund_so = fields.Boolean(default=True, invisible=True)
