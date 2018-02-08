@@ -204,6 +204,30 @@ class SaleOrderLine(models.Model):
         hacemos super al metodo por si en el core existe una restriccion,
         se sobre escribe el metodo agregando una nueva logica para  modificar el campo a facturar y a reembolsar.
         en base a las politicas de facturacion.
+        
+        para la politica de facturacion por cantidad ordenada se aplica la siguiente formula:
+                qty  = (product_uom_qty - qty_returned) - (qty_invoiced - qty_refunded)
+                
+                Donde:
+                product_uom_qty = cantidad ordenada
+                qty_returned = cantidad devuelta
+                qty_invoiced = cantidad en facturas
+                qty_refunded = cantidad en notas de credito
+                qty = el resultado de aplicar la formula indica 
+                      positivo(+) pendendiente de facturar
+                      negativo(-) pendiente de realizar una nota de credito 
+            
+        para la politica de facturacion por cantidad entregada se aplica la siguiente formula:
+                qty_to_invoice =  qty_delivered - line.qty_invoiced
+                
+                Donde:
+                qty_delivered = cantidad despachada
+                qty_invoiced = cantidad en facturas
+                qty_to_invoice = cantidad a facturar
+            
+            nota: para la politica de cantidad entregada no es necesario una cantidad a reembolsar
+                  por que el calculo se base en la cantidad despachada.
+        
         '''
         super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
@@ -217,7 +241,9 @@ class SaleOrderLine(models.Model):
                 elif line.product_id.invoice_policy == 'delivery':
                     line.qty_to_invoice = line.qty_delivered - line.qty_invoiced
                     line.qty_to_refund = 0.0
-            else:#actualizamos a nada que factura a los estados de cotizacion y cancelado.
+            else:
+                #actualizamos a 'nada que factura' a los estados de cotizacion y cancelado.
+                # se aplica en los escenario cuando se cancela la orden de venta 
                 line.invoice_status = 'no'
                 continue
 
