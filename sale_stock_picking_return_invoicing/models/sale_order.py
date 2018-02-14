@@ -158,7 +158,7 @@ class SaleOrderLine(models.Model):
         '''
         qty = super(SaleOrderLine, self)._get_delivered_qty()
         for move in self.procurement_ids.mapped('move_ids').filtered(lambda r: r.state == 'done' and not r.scrapped):
-            if move.location_dest_id.usage != "customer":
+            if move.location_dest_id.usage != "customer" and move.to_refund_so:
                 #revertimos la operacion original para mantener la cantidad entregada.
                 qty += move.product_uom._compute_quantity(move.product_uom_qty, self.product_uom)
         return qty
@@ -173,6 +173,9 @@ class SaleOrderLine(models.Model):
             for inv_line in line.invoice_lines:
                 inv_type = inv_line.invoice_id.type
                 invl_q = inv_line.quantity
+                #la siguiente linea puede causar la creacion de n notas de credito en estado borrador
+                #para crear las notas de credito utiliza el campo qty_to_refunded 
+                #que se basa en qty_refunded campo utilizado para el calculo
                 if inv_line.invoice_id.state in ('open','paid'):
                     if ((inv_type == 'out_invoice' and invl_q < 0.0) or
                         (inv_type == 'out_refund' and invl_q > 0.0)):
@@ -230,6 +233,8 @@ class SaleOrderLine(models.Model):
         '''
         super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
+            line.qty_to_refund = 0.0
+            line.qty_to_invoice = 0.0
             if line.order_id.state in ['sale', 'done']:
                 if line.product_id.invoice_policy == 'order':
                     qty = (line.product_uom_qty - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
@@ -238,8 +243,13 @@ class SaleOrderLine(models.Model):
                     else:
                       line.qty_to_refund = abs(qty)
                 elif line.product_id.invoice_policy == 'delivery':
-                    line.qty_to_invoice = line.qty_delivered - line.qty_invoiced
-                    line.qty_to_refund = 0.0
+                    qty_to_invoice = line.qty_delivered - line.qty_invoiced
+                    if qty_to_invoice < 0:
+                        line.qty_to_invoice = 0.0
+                        line.qty_to_refund = abs(qty_to_invoice)
+                    else:
+                        line.qty_to_invoice = qty_to_invoice
+                        line.qty_to_refund = 0.0
             else:
                 #actualizamos a 'nada que factura' a los estados de cotizacion y cancelado.
                 # se aplica en los escenario cuando se cancela la orden de venta 
@@ -259,33 +269,14 @@ class SaleOrderLine(models.Model):
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
 
-    @api.depends('order_id.state', 'procurement_ids.move_ids.state', 'product_uom_qty', 'qty_delivered')
-    def _compute_qty_to_deliver(self):
-        '''
-        Agregamos el campo intermedio, a entregar, el metodo resta la cantidad vendida menos la catidad despachada.
-        '''
-        for line in self:
-            total = line.product_uom_qty - line.qty_delivered
-            total = max(total,0)
-            line.qty_to_deliver = total
-    
     #columns
     qty_delivered = fields.Float(
-        help='Cantidad total entregada al cliente, se obtiene en base a la cantidad '
-            'pedida ya gestionada desde bodega.'
+        help='Cantidad total entregada al cliente, se obtiene en base a la suma de la cantidad '
+             'de las salidas de bodega en estado realizado.'
         )
     qty_to_invoice = fields.Float(
         help='Cantidad pendiente de facturar, se calcula en base a la siguente fórmula:'
              '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
-        )
-    qty_to_deliver = fields.Float(
-        compute='_compute_qty_to_deliver',
-        copy=False,
-        store=True,
-        digits=dp.get_precision('Product Unit of Measure'),
-        string="Qty to deliver",
-        help='Cantidad pendiente de despachar, se calcula en base a los movimientos de devolución de mercaderia'
-             ' y salida de bodega pendientes de realizar.'
         )
     qty_to_refund = fields.Float(
         compute='_get_to_invoice_qty',
@@ -294,7 +285,7 @@ class SaleOrderLine(models.Model):
         default=0.0,
         digits=dp.get_precision('Product Unit of Measure'),
         help='Cantidad pendiente a reembolsar, Se calcula cuando la siguente fórmula retorna un valor negativo:'
-            '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
+             '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
              'En base a Cant. a reembolsar se genera la nota de crédito.'
         )
     qty_refunded = fields.Float(
@@ -314,8 +305,3 @@ class SaleOrderLine(models.Model):
         help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
              'en estado realizado.'
         )
-    
-class StockReturnPickingLine(models.TransientModel):
-    _inherit = "stock.return.picking.line"
-
-    to_refund_so = fields.Boolean(default=True, invisible=True)
