@@ -156,7 +156,6 @@ class SaleOrderLine(models.Model):
         Metodo modifica la cantidad entregada en el pedido de ventas,
         manteniendo el valor entregado una vez registrada la devolucion.
         '''
-        self.ensure_one()
         qty = super(SaleOrderLine, self)._get_delivered_qty()
         for move in self.procurement_ids.mapped('move_ids').filtered(lambda r: r.state == 'done' and not r.scrapped):
             if move.location_dest_id.usage != "customer":
