@@ -270,38 +270,50 @@ class SaleOrderLine(models.Model):
             line.qty_to_deliver = total
     
     #columns
-    qty_delivered = fields.Float(help='Cantidad total entregada al cliente, se obtiene en base a la cantidad '
-                                      'pedida ya gestionada desde bodega.')
-    qty_to_invoice = fields.Float(help='Cantidad pendiente de facturar, se calcula en base a la siguente fórmula:'
-                                      '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)')
-    qty_to_deliver = fields.Float(compute='_compute_qty_to_deliver',
-                                  copy=False,
-                                  store=True,
-                                  digits=dp.get_precision('Product Unit of Measure'),
-                                  string="Qty to deliver",
-                                  help='Cantidad pendiente de despachar, se calcula en base a los movimientos de devolución de mercaderia'
-                                       ' y salida de bodega pendientes de realizar.')
-    qty_to_refund = fields.Float(compute='_get_to_invoice_qty',
-                                 string='Qty to Refund',
-                                 copy=False,
-                                 default=0.0,
-                                 digits=dp.get_precision('Product Unit of Measure'),
-                                 help='Cantidad pendiente a reembolsar, Se calcula cuando la siguente fórmula retorna un valor negativo:'
-                                     '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
-                                      'En base a Cant. a reembolsar se genera la nota de crédito.')
-    qty_refunded = fields.Float(compute='_compute_qty_refunded',
-                                string='Refunded Qty',
-                                copy=False,
-                                default=0.0,
-                                digits=dp.get_precision('Product Unit of Measure'),
-                                help='Se calcula con la suma de las facturas con cantidad negativas.')
-    qty_returned = fields.Float(compute='_compute_qty_returned',
-                                string='Returned Qty',
-                                copy=False,
-                                default=0.0,
-                                digits=dp.get_precision('Product Unit of Measure'),
-                                help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
-                                     'en estado realizado.')
+    qty_delivered = fields.Float(
+        help='Cantidad total entregada al cliente, se obtiene en base a la cantidad '
+            'pedida ya gestionada desde bodega.'
+        )
+    qty_to_invoice = fields.Float(
+        help='Cantidad pendiente de facturar, se calcula en base a la siguente fórmula:'
+             '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
+        )
+    qty_to_deliver = fields.Float(
+        compute='_compute_qty_to_deliver',
+        copy=False,
+        store=True,
+        digits=dp.get_precision('Product Unit of Measure'),
+        string="Qty to deliver",
+        help='Cantidad pendiente de despachar, se calcula en base a los movimientos de devolución de mercaderia'
+             ' y salida de bodega pendientes de realizar.'
+        )
+    qty_to_refund = fields.Float(
+        compute='_get_to_invoice_qty',
+        string='Qty to Refund',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Cantidad pendiente a reembolsar, Se calcula cuando la siguente fórmula retorna un valor negativo:'
+            '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
+             'En base a Cant. a reembolsar se genera la nota de crédito.'
+        )
+    qty_refunded = fields.Float(
+        compute='_compute_qty_refunded',
+        string='Refunded Qty',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Se calcula con la suma de las facturas con cantidad negativas.'
+        )
+    qty_returned = fields.Float(
+        compute='_compute_qty_returned',
+        string='Returned Qty',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
+             'en estado realizado.'
+        )
     
 class StockReturnPickingLine(models.TransientModel):
     _inherit = "stock.return.picking.line"
