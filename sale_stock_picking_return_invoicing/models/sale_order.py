@@ -156,23 +156,27 @@ class SaleOrderLine(models.Model):
         Metodo modifica la cantidad entregada en el pedido de ventas,
         manteniendo el valor entregado una vez registrada la devolucion.
         '''
-        self.ensure_one()
         qty = super(SaleOrderLine, self)._get_delivered_qty()
-        if qty and self.qty_returned:
-            qty += self.qty_returned
+        for move in self.procurement_ids.mapped('move_ids').filtered(lambda r: r.state == 'done' and not r.scrapped):
+            if move.location_dest_id.usage != "customer" and move.to_refund_so:
+                #revertimos la operacion original para mantener la cantidad entregada.
+                qty += move.product_uom._compute_quantity(move.product_uom_qty, self.product_uom)
         return qty
     
     @api.depends('invoice_lines.invoice_id.state','invoice_lines.quantity')
     def _compute_qty_refunded(self):
         '''
-        Obtiene la cantidad reembolsada 
+        Obtiene la cantidad reembolsada.
         '''
         for line in self:
             qty = 0.0
             for inv_line in line.invoice_lines:
                 inv_type = inv_line.invoice_id.type
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state != 'cancel':
+                #la siguiente linea puede causar la creacion de n notas de credito en estado borrador
+                #para crear las notas de credito utiliza el campo qty_to_refunded 
+                #que se basa en qty_refunded campo utilizado para el calculo
+                if inv_line.invoice_id.state in ('open','paid'):
                     if ((inv_type == 'out_invoice' and invl_q < 0.0) or
                         (inv_type == 'out_refund' and invl_q > 0.0)):
                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
@@ -180,43 +184,82 @@ class SaleOrderLine(models.Model):
     
     @api.depends('invoice_lines.invoice_id.state', 'invoice_lines.quantity')
     def _get_invoice_qty(self):
+        '''
+        Obtenemos la cantidad facturada, se sobre escribe por completo el metodo del core.
+        el core resta la cantidad facturada menos las notas de credito, funcion que sera remplazada
+        manteniendo dos columnas Facturado y  cantidad reembolsada.
+        '''
         super(SaleOrderLine, self)._get_invoice_qty()
         for line in self:
             qty = 0.0
             for inv_line in line.invoice_lines:
                 invl_q = inv_line.quantity
-                if inv_line.invoice_id.state != 'cancel':
+                if inv_line.invoice_id.state in ('open','paid'):
                     if ((inv_line.invoice_id.type == 'out_invoice' and invl_q > 0.0) or
                         (inv_line.invoice_id.type == 'out_refund' and invl_q < 0.0)):
                         qty += inv_line.uom_id._compute_quantity(inv_line.quantity, line.product_uom)
             line.qty_invoiced = qty
  
-    @api.depends('order_id.state',  'qty_invoiced',
-                 'invoice_lines.invoice_id.state', 'invoice_lines.quantity')
-    def _compute_qty_to_invoice(self):
+    @api.depends('qty_invoiced', 'qty_delivered', 'product_uom_qty', 'order_id.state')
+    def _get_to_invoice_qty(self):
         '''
-        Obtiene la cantidad a reembolsar
+        hacemos super al metodo por si en el core existe una restriccion,
+        se sobre escribe el metodo agregando una nueva logica para  modificar el campo a facturar y a reembolsar.
+        en base a las politicas de facturacion.
+        
+        para la politica de facturacion por cantidad ordenada se aplica la siguiente formula:
+                qty  = (product_uom_qty - qty_returned) - (qty_invoiced - qty_refunded)
+                
+                Donde:
+                product_uom_qty = cantidad ordenada
+                qty_returned = cantidad devuelta
+                qty_invoiced = cantidad en facturas
+                qty_refunded = cantidad en notas de credito
+                qty = el resultado de aplicar la formula indica 
+                      positivo(+) pendendiente de facturar
+                      negativo(-) pendiente de realizar una nota de credito 
+            
+        para la politica de facturacion por cantidad entregada se aplica la siguiente formula:
+                qty_to_invoice =  qty_delivered - line.qty_invoiced
+                
+                Donde:
+                qty_delivered = cantidad despachada
+                qty_invoiced = cantidad en facturas
+                qty_to_invoice = cantidad a facturar
+            
+            nota: para la politica de cantidad entregada no es necesario una cantidad a reembolsar
+                  por que el calculo se base en la cantidad despachada.
+        
         '''
+        super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
             line.qty_to_refund = 0.0
-            if line.order_id.state not in ('sale', 'done'):
-                line.invoice_status = 'no'
-                continue
-            else:
-                if line.product_id.purchase_method == 'receive':
+            line.qty_to_invoice = 0.0
+            if line.order_id.state in ['sale', 'done']:
+                if line.product_id.invoice_policy == 'order':
                     qty = (line.product_uom_qty - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
                     if qty >= 0.0:
                       line.qty_to_invoice = qty
                     else:
-                       line.qty_to_refund = abs(qty)
-                else:
-                    line.qty_to_invoice = line.product_uom_qty - line.qty_invoiced
-                    line.qty_to_refund = 0.0
+                      line.qty_to_refund = abs(qty)
+                elif line.product_id.invoice_policy == 'delivery':
+                    qty_to_invoice = line.qty_delivered - line.qty_invoiced
+                    if qty_to_invoice < 0:
+                        line.qty_to_invoice = 0.0
+                        line.qty_to_refund = abs(qty_to_invoice)
+                    else:
+                        line.qty_to_invoice = qty_to_invoice
+                        line.qty_to_refund = 0.0
+            else:
+                #actualizamos a 'nada que factura' a los estados de cotizacion y cancelado.
+                # se aplica en los escenario cuando se cancela la orden de venta 
+                line.invoice_status = 'no'
+                continue
 
     @api.depends('order_id.state', 'procurement_ids.move_ids.state')
     def _compute_qty_returned(self):
         '''
-        Obtiene la cantidad devuelta
+        Obtiene la cantidad devuelta en base al movimientos de los grupos de abastecimientos.
         '''
         for line in self:
              line.qty_returned = 0.0
@@ -226,31 +269,39 @@ class SaleOrderLine(models.Model):
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
 
-    @api.multi
-    def _prepare_invoice_line(self, qty):
-        '''
-        Modifica el valor de cantidad de la factura con la cantidad a devolver.
-        '''
-        res = super(SaleOrderLine, self)._prepare_invoice_line(qty)
-        if self.product_id.purchase_method == 'receive':
-            qty = (self.product_uom_qty - self.qty_returned) - (self.qty_invoiced - self.qty_refunded)
-            res['quantity'] = qty
-        type = self._context.get('type',False)
-        if type == 'out_refund':
-            account = self.product_id.property_account_customer_refund or \
-                      self.product_id.categ_id.property_account_customer_refund_categ or False
-            if account:
-                res['account_id'] = account.id
-            res['quantity'] *= -1.0
-        return res
-        
     #columns
-    qty_to_refund = fields.Float(compute='_compute_qty_to_invoice', string='Qty to Refund', copy=False, default=0.0,
-                                 digits=dp.get_precision('Product Unit of Measure'),
-                                 help='')
-    qty_refunded = fields.Float(compute='_compute_qty_refunded', string='Refunded Qty', copy=False, default=0.0,
-                                digits=dp.get_precision('Product Unit of Measure'),
-                                help='')
-    qty_returned = fields.Float(compute='_compute_qty_returned', string='Returned Qty', copy=False, default=0.0,
-                                digits=dp.get_precision('Product Unit of Measure'),
-                                help='')
+    qty_delivered = fields.Float(
+        help='Cantidad total entregada al cliente, se obtiene en base a la suma de la cantidad '
+             'de las salidas de bodega en estado realizado.'
+        )
+    qty_to_invoice = fields.Float(
+        help='Cantidad pendiente de facturar, se calcula en base a la siguente fórmula:'
+             '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
+        )
+    qty_to_refund = fields.Float(
+        compute='_get_to_invoice_qty',
+        string='Qty to Refund',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Cantidad pendiente a reembolsar, Se calcula cuando la siguente fórmula retorna un valor negativo:'
+             '(cantidad entregada - cantidad devuelta) - (cantidad facturada - notas de crédito emitidas)'
+             'En base a Cant. a reembolsar se genera la nota de crédito.'
+        )
+    qty_refunded = fields.Float(
+        compute='_compute_qty_refunded',
+        string='Refunded Qty',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Se calcula con la suma de las facturas con cantidad negativas.'
+        )
+    qty_returned = fields.Float(
+        compute='_compute_qty_returned',
+        string='Returned Qty',
+        copy=False,
+        default=0.0,
+        digits=dp.get_precision('Product Unit of Measure'),
+        help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
+             'en estado realizado.'
+        )

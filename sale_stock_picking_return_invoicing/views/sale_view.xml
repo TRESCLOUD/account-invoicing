@@ -17,6 +17,9 @@
 				<field name="qty_returned" invisible="context.get('hide_sale', False)"/>
 				<field name="invoice_status" invisible="1"/>
 			</xpath>
+			<xpath expr="//field[@name='order_line']/tree/field[@name='qty_invoiced']" position="before">
+				<field name="qty_to_invoice" invisible="context.get('hide_sale', False)" groups="base.group_no_one"/>
+			</xpath> 
 			<xpath expr="//field[@name='order_line']/tree/field[@name='qty_invoiced']" position="after">
 				<field name="qty_to_refund" invisible="context.get('hide_sale', False)"/>
 				<field name="qty_refunded"  invisible="context.get('hide_sale', False)"/>
