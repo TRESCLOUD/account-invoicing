@@ -259,7 +259,7 @@ class SaleOrderLine(models.Model):
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
 
-    @api.depends('order_id.state', 'procurement_ids.move_ids.state', 'product_uom_qty')
+    @api.depends('order_id.state', 'procurement_ids.move_ids.state', 'product_uom_qty', 'qty_delivered')
     def _compute_qty_to_deliver(self):
         '''
         Agregamos el campo intermedio, a entregar, el metodo resta la cantidad vendida menos la catidad despachada.
