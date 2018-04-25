@@ -269,6 +269,17 @@ class SaleOrderLine(models.Model):
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
 
+    def action_compute_sale_line_qty(self):
+        """
+        Permite recalcular los campos qty_delivered, qty_to_invoice, qty_invoiced   
+        """
+        for sale in self:
+            for line in sale.order_line:
+                line.qty_delivered = line._get_delivered_qty()
+                line._get_to_invoice_qty()
+                line._get_invoice_qty()
+        return True
+    
     #columns
     qty_delivered = fields.Float(
         help='Cantidad total entregada al cliente, se obtiene en base a la suma de la cantidad '
