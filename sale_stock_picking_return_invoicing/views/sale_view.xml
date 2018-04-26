@@ -25,7 +25,7 @@
 				<field name="qty_refunded"  invisible="context.get('hide_sale', False)"/>
 			</xpath> 
 			<xpath expr="//field[@name='margin']" position="before">
-				<button type="object" name="action_compute_sale_line_qty"/>
+				<button type="object" name="action_compute_sale_line_qty" string="Recompute fields in sale lines" class="oe_highlight"/>
 			</xpath> 
 		</field>
 	</record>
