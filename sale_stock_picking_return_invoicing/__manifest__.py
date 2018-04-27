@@ -3,7 +3,7 @@
 
 {
     'name': 'Sale Stock Picking Return Invoicing',
-    'version': '10.0.1.1',
+    'version': '10.0.1.2',
     'category': 'Sales',
     'description': '''
         Característica: 
