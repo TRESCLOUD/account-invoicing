@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2017 Trescloud <http://trescloud.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
-###################################################
-'''
-Archivo de migracion de Autorizaciones
-'''
-###################################################
+
 from openupgradelib import openupgrade
 from timeit import default_timer as timer
 import logging
