@@ -28,7 +28,7 @@
 				<field name="hide_recompute_lines_button" invisible="1"/>
 				<button type="object" name="action_compute_sale_line_qty" 
 				string="Recompute fields in sale lines" class="oe_highlight" 
-				attrs="{'invisible': [('hide_recompute_lines_button', '=', True)]}"/> 
+				attrs="{'invisible': [('hide_recompute_lines_button', '!=', 1)]}"/> 
 			</xpath> 
 		</field>
 	</record>

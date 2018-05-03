@@ -25,7 +25,7 @@ class SaleOrder(models.Model):
         """
         obtiene el usuario actual, si es administrador se retorna False
         """
-        return not self.env.user.id == 1
+        self.hide_recompute_lines_button = self.env.user.id
              
     @api.depends('state', 'order_line.invoice_status')
     def _get_invoiced(self):
@@ -164,9 +164,11 @@ class SaleOrder(models.Model):
     invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
                                           help='')
 
-    hide_recompute_lines_button = fields.Boolean(compute='_hide_recompute_lines_button',
+    hide_recompute_lines_button = fields.Integer(compute='_hide_recompute_lines_button',
                                                  string='Hide recompute lines button if user is not admin', 
-                                                 copy=False, store=False,
+                                                 copy=False, 
+                                                 store=False,
+                                                 method=True,
                                                  help='Hide recompute lines button if user is not admin')
 
 
