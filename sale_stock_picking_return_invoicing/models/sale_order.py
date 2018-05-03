@@ -20,13 +20,7 @@ class SaleOrder(models.Model):
              for line in order.order_line:
                  invoices |= line.invoice_lines.mapped('invoice_id').filtered(lambda x: x.type == 'out_refund')
              order.invoice_refund_count = len(invoices)
-             
-    def _hide_recompute_lines_button(self):
-        """
-        obtiene el usuario actual, si es administrador se retorna False
-        """
-        self.hide_recompute_lines_button = self.env.user.id
-             
+                          
     @api.depends('state', 'order_line.invoice_status')
     def _get_invoiced(self):
         '''
@@ -163,13 +157,6 @@ class SaleOrder(models.Model):
     #Column
     invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
                                           help='')
-
-    hide_recompute_lines_button = fields.Integer(compute='_hide_recompute_lines_button',
-                                                 string='Hide recompute lines button if user is not admin', 
-                                                 copy=False, 
-                                                 store=False,
-                                                 method=True,
-                                                 help='Hide recompute lines button if user is not admin')
 
 
 class SaleOrderLine(models.Model):
