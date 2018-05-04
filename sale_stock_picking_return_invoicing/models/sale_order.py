@@ -20,7 +20,7 @@ class SaleOrder(models.Model):
              for line in order.order_line:
                  invoices |= line.invoice_lines.mapped('invoice_id').filtered(lambda x: x.type == 'out_refund')
              order.invoice_refund_count = len(invoices)
-             
+                          
     @api.depends('state', 'order_line.invoice_status')
     def _get_invoiced(self):
         '''
@@ -33,7 +33,7 @@ class SaleOrder(models.Model):
                 'invoice_count': len(set(invoice_ids.ids)),
                 'invoice_ids': invoice_ids.ids
             })
-            
+                
     @api.multi
     def action_view_invoice_refund(self):
         '''
@@ -141,6 +141,18 @@ class SaleOrder(models.Model):
             if journal:
                 res.update({'journal_id': journal.id})
         return res
+    
+    @api.multi
+    def action_compute_sale_line_qty(self):
+        """
+        Permite recalcular los campos qty_delivered, qty_to_invoice, qty_invoiced   
+        """
+        for sale in self:
+            for line in sale.order_line:
+                line.qty_delivered = line._get_delivered_qty()
+                line._get_to_invoice_qty()
+                line._get_invoice_qty()
+        return True    
 
     #Column
     invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
