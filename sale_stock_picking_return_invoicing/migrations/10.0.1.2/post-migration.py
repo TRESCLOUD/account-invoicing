@@ -39,4 +39,5 @@ def update_sale_line_fields(env):
 @openupgrade.migrate(use_env=True)
 def migrate(env, version):
     cr = env.cr
-    update_sale_line_fields(env)
+    # comentado debido a demoras en procesamiento
+    #update_sale_line_fields(env)
