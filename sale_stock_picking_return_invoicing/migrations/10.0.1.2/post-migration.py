@@ -39,4 +39,4 @@ def update_sale_line_fields(env):
 @openupgrade.migrate(use_env=True)
 def migrate(env, version):
     cr = env.cr
-    update_sale_line_fields(env)
+    #update_sale_line_fields(env)
