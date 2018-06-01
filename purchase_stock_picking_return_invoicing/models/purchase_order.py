@@ -248,7 +248,10 @@ class PurchaseOrderLine(models.Model):
             qty = 0.0
             for move in line.move_ids:
                 if move.state == 'done' and move.location_id.usage != 'supplier':
-                    qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                    if move.product_uom != line.product_uom:
+                        qty = move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                    else:
+                        qty = move.product_uom_qty
             line.qty_returned = qty
 
     @api.depends('order_id.state', 'move_ids.state', 'move_ids', 'qty_returned')
