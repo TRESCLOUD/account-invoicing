@@ -105,6 +105,18 @@ class PurchaseOrder(models.Model):
                             lambda x: x.type == 'in_refund')
             order.invoice_refund_count = len(invoices)
     
+    @api.multi
+    def action_compute_purchase_line_qty(self):
+        """
+        Permite recalcular los campos qty_delivered, qty_to_invoice, qty_invoiced   
+        """
+        for purchase in self:
+            for line in purchase.order_line:
+                line._compute_qty_received()
+                line._compute_qty_to_invoice()
+                line._compute_qty_invoiced()
+        return True  
+    
     #columns
     invoice_refund_count = fields.Integer(
         compute='_compute_invoice_refund',
@@ -248,7 +260,10 @@ class PurchaseOrderLine(models.Model):
         for line in self:
             for move in line.move_ids:
                 if move.state == 'done' and move.location_id.usage != 'supplier':
-                    qty = move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                    if move.product_uom != line.product_uom:
+                        qty = move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
+                    else:
+                        qty = move.product_uom_qty
                     line.qty_received -= qty
     
     #columns
