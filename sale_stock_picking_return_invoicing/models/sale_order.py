@@ -149,7 +149,6 @@ class SaleOrder(models.Model):
         """
         for sale in self:
             for line in sale.order_line:
-                line.action_compute_sale_line_qty()
                 line.qty_delivered = line._get_delivered_qty()
                 line._get_to_invoice_qty()
                 line._get_invoice_qty()
