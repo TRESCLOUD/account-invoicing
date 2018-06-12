@@ -3,7 +3,7 @@
 
 {
     'name': 'Sale Stock Picking Return Invoicing',
-    'version': '10.0.1.3',
+    'version': '10.0.1.2',
     'category': 'Sales',
     'description': '''
         Característica: 
@@ -25,8 +25,10 @@
          'sale_stock'
     ],    
     'data': [
+        #Cron
+        'ir_cron_scheduler_data.xml',
         #Data
-        'views/sale_view.xml',
+        'views/sale_view.xml'
     ],
     'installable': True
 }

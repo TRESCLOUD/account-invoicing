@@ -158,17 +158,22 @@ class SaleOrder(models.Model):
     def cron_compute_sale_line_qty(self):
         '''
         Este metodo invoca los procesos de forma automatica para recalcular en las lineas de venta los campos
-        qty_delivered, to_invoice_qty, invoice_qty
+        qty_delivered, to_invoice_qty, invoice_qty que aun no hayan sido reprocesadas (campo reprocess_lines = False)
         '''
         time_start = timer()
-        # reprocesamos todas las lineas de todas las ventas
-        #TODO PATO: Hacer que busque los que tengan el campo "sspri_module_version" distintos a la version del modulo
-        sale_ids = env['sale.order'].search([], order='id desc')
+        # reprocesamos todas las lineas de todas las ventas que aun
+        sale_ids = env['sale.order'].search([('reprocess_lines', '=', False)], order='id desc')
+        # No hay ventas que reprocesar, deshabilito el cron
+        if not sale_ids:
+            xml_data_cron = self.env['ir_model_data'].search([('name', '=', 'process_pending_action_compute_sale_line_qty'), ('module', '=', 'sale_stock_picking_return_invoicing')])
+            if xml_data_cron:
+                xml_data_cron[0].res_id.active = False
+            return True
         count = 0
         total_sale = len(sale_ids)
         for sale in sale_ids:
             try:
-                _logger.info("1. Inicia procesamiento venta ID: %s. ", sale.id)
+                _logger.info("1. Inicia procesamiento de las lineas de la venta de ID: %s. ", sale.id)
                 start_document = timer()
                 #usamos recompute=False para evitar disparar campos funcionales
                 sale.with_context(recompute=False).action_compute_sale_line_qty()
@@ -182,17 +187,21 @@ class SaleOrder(models.Model):
                 self._cr.rollback() #reversamos al ultimo commit, es decir se van todos los calculos de este documento
                 self.env.cr.commit()
             else: #si todo funciona bien continuamos
-                sale.write() #TODO PATO: Aqui escribir por SQL la version del modulo en la columna sspri_module_version
+                sale.reprocess_lines = True
                 self.env.cr.commit()
                 end_document = timer()
                 delta_document = end_document - start_document
                 _logger.info("3. Procesada venta %s de %s. ID: %s. Tiempo (seg): %s.",count, total_sale, sale.id, "%.3f" % delta_document)
                 time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
         self._cr.close()
-        time_end = timer() #timeit.timeit()
-
+        time_end = timer()
 
     #Columns
+    reprocess_lines = fields.Boolean(
+        string='This order lines was recomputed?',
+        default=False, 
+        help="Show if this order lines was recomputed or not" 
+        )
     invoice_refund_count = fields.Integer(
         compute='_compute_invoice_refund', 
         string='# of Invoice Refunds',
