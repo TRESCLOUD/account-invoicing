@@ -149,19 +149,63 @@ class SaleOrder(models.Model):
         """
         for sale in self:
             for line in sale.order_line:
+                line.action_compute_sale_line_qty()
                 line.qty_delivered = line._get_delivered_qty()
                 line._get_to_invoice_qty()
                 line._get_invoice_qty()
         return True    
 
-    #Column
-    invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
-                                          help='')
+    @api.model
+    def cron_compute_sale_line_qty(self):
+        '''
+        Este metodo invoca los procesos de forma automatica para recalcular en las lineas de venta los campos
+        qty_delivered, to_invoice_qty, invoice_qty
+        '''
+        time_start = timer()
+        # reprocesamos todas las lineas de todas las ventas
+        #TODO PATO: Hacer que busque los que tengan el campo "sspri_module_version" distintos a la version del modulo
+        sale_ids = env['sale.order'].search([], order='id desc')
+        count = 0
+        total_sale = len(sale_ids)
+        for sale in sale_ids:
+            try:
+                _logger.info("1. Inicia procesamiento venta ID: %s. ", sale.id)
+                start_document = timer()
+                #usamos recompute=False para evitar disparar campos funcionales
+                sale.with_context(recompute=False).action_compute_sale_line_qty()
+                end_lines = timer()
+                delta_lines = end_lines - start_document
+                _logger.info("2. Procesadas %s lineas de la venta ID: %s. Tiempo (seg): %s.",len(sale.order_line), sale.id, "%.3f" % delta_lines)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+                count +=1
+            except Exception: #si hay error obviamos su computo y seguimos
+                _logger.error("La venta ID: %s no pudo ser computada.",str(sale.id))
+                self._cr.rollback() #reversamos al ultimo commit, es decir se van todos los calculos de este documento
+                self.env.cr.commit()
+            else: #si todo funciona bien continuamos
+                sale.write() #TODO PATO: Aqui escribir por SQL la version del modulo en la columna sspri_module_version
+                self.env.cr.commit()
+                end_document = timer()
+                delta_document = end_document - start_document
+                _logger.info("3. Procesada venta %s de %s. ID: %s. Tiempo (seg): %s.",count, total_sale, sale.id, "%.3f" % delta_document)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+        self._cr.close()
+        time_end = timer() #timeit.timeit()
+
+
+    #Columns
+    invoice_refund_count = fields.Integer(
+        compute='_compute_invoice_refund', 
+        string='# of Invoice Refunds',
+        copy=False, 
+        default=0,
+        help='',
+        )
 
 
 class SaleOrderLine(models.Model):
-    _inherit = 'sale.order.line'
-    
+    _inherit = 'sale.order.line'  
+
     @api.multi
     def _get_delivered_qty(self):
         '''
@@ -249,7 +293,7 @@ class SaleOrderLine(models.Model):
             line.qty_to_invoice = 0.0
             if line.order_id.state in ['sale', 'done']:
                 if line.product_id.invoice_policy == 'order':
-                    qty = (line.product_uom_qty - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
+                    qty = (max(line.product_uom_qty, line.qty_delivered) - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
                     if qty >= 0.0:
                       line.qty_to_invoice = qty
                     else:
@@ -317,3 +361,5 @@ class SaleOrderLine(models.Model):
         help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
              'en estado realizado.'
         )
+    
+    
