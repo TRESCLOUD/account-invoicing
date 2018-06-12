@@ -5,6 +5,10 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 import odoo.addons.decimal_precision as dp
 from odoo.tools import float_is_zero
+from timeit import default_timer as timer
+import time
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class SaleOrder(models.Model):
@@ -162,12 +166,13 @@ class SaleOrder(models.Model):
         '''
         time_start = timer()
         # reprocesamos todas las lineas de todas las ventas que aun
-        sale_ids = env['sale.order'].search([('reprocess_lines', '=', False)], order='id desc')
+        sale_ids = self.search([('reprocess_lines', '=', False)], order='id desc')
         # No hay ventas que reprocesar, deshabilito el cron
         if not sale_ids:
-            xml_data_cron = self.env['ir_model_data'].search([('name', '=', 'process_pending_action_compute_sale_line_qty'), ('module', '=', 'sale_stock_picking_return_invoicing')])
+            xml_data_cron = self.env['ir.model.data'].search([('name', '=', 'process_pending_action_compute_sale_line_qty'), ('module', '=', 'sale_stock_picking_return_invoicing')])
             if xml_data_cron:
-                xml_data_cron[0].res_id.active = False
+                self.env['ir.cron'].browse(xml_data_cron[0].res_id).active = False
+                self.env.cr.commit()
             return True
         count = 0
         total_sale = len(sale_ids)

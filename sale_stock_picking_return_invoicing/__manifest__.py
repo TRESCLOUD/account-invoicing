@@ -26,7 +26,7 @@
     ],    
     'data': [
         #Cron
-        'ir_cron_scheduler_data.xml',
+        'data/ir_cron_scheduler_data.xml',
         #Data
         'views/sale_view.xml'
     ],
