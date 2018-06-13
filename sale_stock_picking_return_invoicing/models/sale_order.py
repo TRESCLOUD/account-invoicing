@@ -5,6 +5,10 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 import odoo.addons.decimal_precision as dp
 from odoo.tools import float_is_zero
+from timeit import default_timer as timer
+import time
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class SaleOrder(models.Model):
@@ -154,14 +158,67 @@ class SaleOrder(models.Model):
                 line._get_invoice_qty()
         return True    
 
-    #Column
-    invoice_refund_count = fields.Integer(compute='_compute_invoice_refund', string='# of Invoice Refunds',copy=False, default=0,
-                                          help='')
+    @api.model
+    def cron_compute_sale_line_qty(self):
+        '''
+        Este metodo invoca los procesos de forma automatica para recalcular en las lineas de venta los campos
+        qty_delivered, to_invoice_qty, invoice_qty que aun no hayan sido reprocesadas (campo reprocess_lines = False)
+        '''
+        time_start = timer()
+        # reprocesamos todas las lineas de todas las ventas que aun
+        sale_ids = self.search([('reprocess_lines', '=', False)], order='id desc')
+        # No hay ventas que reprocesar, deshabilito el cron
+        if not sale_ids:
+            xml_data_cron = self.env['ir.model.data'].search([('name', '=', 'process_pending_action_compute_sale_line_qty'), ('module', '=', 'sale_stock_picking_return_invoicing')])
+            if xml_data_cron:
+                self.env['ir.cron'].browse(xml_data_cron[0].res_id).active = False
+                self.env.cr.commit()
+            return True
+        count = 0
+        total_sale = len(sale_ids)
+        for sale in sale_ids:
+            try:
+                _logger.info("1. Inicia procesamiento de las lineas de la venta de ID: %s. ", sale.id)
+                start_document = timer()
+                #usamos recompute=False para evitar disparar campos funcionales
+                sale.with_context(recompute=False).action_compute_sale_line_qty()
+                end_lines = timer()
+                delta_lines = end_lines - start_document
+                _logger.info("2. Procesadas %s lineas de la venta ID: %s. Tiempo (seg): %s.",len(sale.order_line), sale.id, "%.3f" % delta_lines)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+                count +=1
+            except Exception: #si hay error obviamos su computo y seguimos
+                _logger.error("La venta ID: %s no pudo ser computada.",str(sale.id))
+                self._cr.rollback() #reversamos al ultimo commit, es decir se van todos los calculos de este documento
+                self.env.cr.commit()
+            else: #si todo funciona bien continuamos
+                sale.reprocess_lines = True
+                self.env.cr.commit()
+                end_document = timer()
+                delta_document = end_document - start_document
+                _logger.info("3. Procesada venta %s de %s. ID: %s. Tiempo (seg): %s.",count, total_sale, sale.id, "%.3f" % delta_document)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+        self._cr.close()
+        time_end = timer()
+
+    #Columns
+    reprocess_lines = fields.Boolean(
+        string='This order lines was recomputed?',
+        default=False, 
+        help="Show if this order lines was recomputed or not" 
+        )
+    invoice_refund_count = fields.Integer(
+        compute='_compute_invoice_refund', 
+        string='# of Invoice Refunds',
+        copy=False, 
+        default=0,
+        help='',
+        )
 
 
 class SaleOrderLine(models.Model):
-    _inherit = 'sale.order.line'
-    
+    _inherit = 'sale.order.line'  
+
     @api.multi
     def _get_delivered_qty(self):
         '''
@@ -249,7 +306,7 @@ class SaleOrderLine(models.Model):
             line.qty_to_invoice = 0.0
             if line.order_id.state in ['sale', 'done']:
                 if line.product_id.invoice_policy == 'order':
-                    qty = (line.product_uom_qty - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
+                    qty = (max(line.product_uom_qty, line.qty_delivered) - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
                     if qty >= 0.0:
                       line.qty_to_invoice = qty
                     else:
@@ -317,3 +374,5 @@ class SaleOrderLine(models.Model):
         help='Cantidad devuelta desde bodega, se obtiene en base a los movimientos de devolución de mercaderia '
              'en estado realizado.'
         )
+    
+    

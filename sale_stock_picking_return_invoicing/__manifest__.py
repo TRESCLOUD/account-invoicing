@@ -25,8 +25,10 @@
          'sale_stock'
     ],    
     'data': [
+        #Cron
+        'data/ir_cron_scheduler_data.xml',
         #Data
-        'views/sale_view.xml',
+        'views/sale_view.xml'
     ],
     'installable': True
 }
