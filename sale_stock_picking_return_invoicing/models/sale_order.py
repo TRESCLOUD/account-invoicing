@@ -302,28 +302,25 @@ class SaleOrderLine(models.Model):
         '''
         super(SaleOrderLine, self)._get_to_invoice_qty()
         for line in self:
-            line.qty_to_refund = 0.0
-            line.qty_to_invoice = 0.0
+            qty_to_refund = 0.0
+            qty_to_invoice = 0.0
             if line.order_id.state in ['sale', 'done']:
                 if line.product_id.invoice_policy == 'order':
-                    qty = (max(line.product_uom_qty, line.qty_delivered) - line.qty_returned) - (line.qty_invoiced - line.qty_refunded)
+                    qty = (max(line.product_uom_qty, line.qty_delivered - line.qty_returned)) - (line.qty_invoiced - line.qty_refunded)
                     if qty >= 0.0:
-                      line.qty_to_invoice = qty
+                      qty_to_invoice = qty
                     else:
-                      line.qty_to_refund = abs(qty)
+                      qty_to_refund = abs(qty)
                 elif line.product_id.invoice_policy == 'delivery':
                     qty_to_invoice = line.qty_delivered - line.qty_invoiced
                     if qty_to_invoice < 0:
-                        line.qty_to_invoice = 0.0
-                        line.qty_to_refund = abs(qty_to_invoice)
+                        qty_to_invoice = 0.0
+                        qty_to_refund = abs(qty_to_invoice)
                     else:
-                        line.qty_to_invoice = qty_to_invoice
-                        line.qty_to_refund = 0.0
-            else:
-                #actualizamos a 'nada que factura' a los estados de cotizacion y cancelado.
-                # se aplica en los escenario cuando se cancela la orden de venta 
-                line.invoice_status = 'no'
-                continue
+                        qty_to_invoice = qty_to_invoice
+                        qty_to_refund = 0.0
+            line.qty_to_refund = qty_to_refund
+            line.qty_to_invoice = qty_to_invoice
 
     @api.depends('order_id.state', 'procurement_ids.move_ids.state')
     def _compute_qty_returned(self):
