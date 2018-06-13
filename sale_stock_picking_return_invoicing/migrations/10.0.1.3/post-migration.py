@@ -13,7 +13,7 @@ def active_reprocess_sale_lines_qty(env):
         """)
     xml_data_cron = env['ir.model.data'].search([('name', '=', 'process_pending_action_compute_sale_line_qty'), ('module', '=', 'sale_stock_picking_return_invoicing')])
     if xml_data_cron:
-        self.env['ir.cron'].browse(xml_data_cron[0].res_id).active = True
+        env['ir.cron'].browse(xml_data_cron[0].res_id).active = True
     else:
         raise "No existe el cron de reprocesamiento de catidad en las lineas de venta"    
     
