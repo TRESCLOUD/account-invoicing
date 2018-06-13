@@ -18,7 +18,11 @@
         "purchase_open_qty",
     ],
     "data": [
+        #Cron
+        'data/ir_cron_scheduler_data.xml',
+        #Views
         "views/purchase_view.xml",
+        #Wizard
         "wizards/stock_return_picking_view.xml"
     ],
 }
