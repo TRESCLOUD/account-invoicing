@@ -122,11 +122,12 @@ class PurchaseOrder(models.Model):
         """
         Permite recalcular los campos qty_delivered, qty_to_invoice, qty_invoiced   
         """
-        for purchase in self: #.with_context(recompute=False):
+        for purchase in self.with_context(recompute=False):
             for line in purchase.order_line:
                 line._compute_qty_received()
                 line._compute_qty_invoiced()
                 line._compute_qty_to_invoice()
+            purchase._get_invoiced() #actualizamos el estado de facturacion de la orden
         return True    
 
 class PurchaseOrderLine(models.Model):
