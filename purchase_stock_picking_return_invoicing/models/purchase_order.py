@@ -5,6 +5,10 @@
 
 from odoo import api, fields, models, _
 from odoo.tools.float_utils import float_compare
+from timeit import default_timer as timer
+import time
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class PurchaseOrder(models.Model):
