@@ -130,6 +130,55 @@ class PurchaseOrder(models.Model):
             purchase._get_invoiced() #actualizamos el estado de facturacion de la orden
         return True    
 
+    @api.model
+    def cron_compute_purchase_line_qty(self):
+        '''
+        Este metodo invoca los procesos de forma automatica para recalcular en las lineas de compra los campos
+        qty_received, qty_invoice, qty_to_invoice que aun no hayan sido reprocesadas (campo reprocess_lines = False)
+        '''
+        time_start = timer()
+        purchase_ids= self.search([('reprocess_lines', '=', False)], order='id desc')
+        # No hay compras que reprocesar, deshabilito el cron
+        if not purchase_ids:
+            xml_data_cron = self.env['ir.model.data'].search([('name', '=', 'process_pending_action_compute_purchase_line_qty'), ('module', '=', 'purchase_stock_picking_return_invoicing')])
+            if xml_data_cron:
+                self.env['ir.cron'].browse(xml_data_cron[0].res_id).active = False
+                self.env.cr.commit()
+            return True
+        count = 0
+        total_purchase = len(purchase_ids)
+        for purchase in purchase_ids:
+            try:
+                _logger.info("1. Inicia procesamiento de las lineas de la compra de ID: %s. ", purchase.id)
+                start_document = timer()
+                #usamos recompute=False para evitar disparar campos funcionales
+                purchase.with_context(recompute=False).action_compute_purchase_line_qty()
+                end_lines = timer()
+                delta_lines = end_lines - start_document
+                _logger.info("2. Procesadas %s lineas de la compra ID: %s. Tiempo (seg): %s.",len(purchase.order_line), purchase.id, "%.3f" % delta_lines)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+                count +=1
+            except Exception: #si hay error obviamos su computo y seguimos
+                _logger.error("La compra de ID: %s no pudo ser computada.",str(purchase.id))
+                self._cr.rollback() #reversamos al ultimo commit, es decir se van todos los calculos de este documento
+                self.env.cr.commit()
+            else: #si todo funciona bien continuamos
+                purchase.reprocess_lines = True
+                self.env.cr.commit()
+                end_document = timer()
+                delta_document = end_document - start_document
+                _logger.info("3. Procesada compra %s de %s. ID: %s. Tiempo (seg): %s.",count, total_purchase, purchase.id, "%.3f" % delta_document)
+                time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
+        time_end = timer()
+
+    #Columns
+    reprocess_lines = fields.Boolean(
+        string='This purchase order was recomputed?',
+        default=False, 
+        help="Show if this purchase order was recomputed or not" 
+        )
+
+
 class PurchaseOrderLine(models.Model):
     _inherit = "purchase.order.line"
 
