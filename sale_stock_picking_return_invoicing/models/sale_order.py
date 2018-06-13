@@ -198,7 +198,7 @@ class SaleOrder(models.Model):
                 delta_document = end_document - start_document
                 _logger.info("3. Procesada venta %s de %s. ID: %s. Tiempo (seg): %s.",count, total_sale, sale.id, "%.3f" % delta_document)
                 time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
-        self._cr.close()
+        #self._cr.close()
         time_end = timer()
 
     #Columns
