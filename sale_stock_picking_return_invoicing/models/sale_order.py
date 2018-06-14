@@ -334,7 +334,21 @@ class SaleOrderLine(models.Model):
                  if move.state == 'done' and move.location_dest_id.usage !='customer':
                      qty += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom)
              line.qty_returned = qty
-
+    
+    @api.model
+    def _get_qty_delivered(self):
+        '''Agrega el concepto de cantidades devueltas'''
+        qty_delivered = super(SaleOrderLine, self)._get_qty_delivered()
+        qty_delivered -= self.qty_returned
+        return qty_delivered
+    
+    @api.model
+    def _get_qty_invoiced(self):
+        '''Agrega el concepto de qtys en notas de credito'''
+        qty_invoiced = super(SaleOrderLine, self)._get_qty_invoiced()
+        qty_invoiced -= self.qty_refunded
+        return qty_invoiced
+    
     #columns
     qty_delivered = fields.Float(
         help='Cantidad total entregada al cliente, se obtiene en base a la suma de la cantidad '
