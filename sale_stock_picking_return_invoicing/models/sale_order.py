@@ -306,11 +306,13 @@ class SaleOrderLine(models.Model):
             qty_to_invoice = 0.0
             if line.order_id.state in ['sale', 'done']:
                 if line.product_id.invoice_policy == 'order':
-                    qty = (max(line.product_uom_qty, line.qty_delivered - line.qty_returned)) - (line.qty_invoiced - line.qty_refunded)
-                    if qty >= 0.0:
-                      qty_to_invoice = qty
-                    else:
-                      qty_to_refund = abs(qty)
+                    qty_ordered_real = line.product_uom_qty
+                    qty_delivered_real = line.qty_delivered - line.qty_returned
+                    qty_invoiced_real = line.qty_invoiced - line.qty_refunded
+                    qty_to_invoice = max(max(qty_ordered_real, qty_delivered_real) - qty_invoiced_real, 0.0)
+                    if qty_delivered_real < qty_invoiced_real:
+                        #la nota de credito depende de lo ya facturado, no de lo pedido
+                        qty_to_refund = qty_invoiced_real - qty_delivered_real
                 elif line.product_id.invoice_policy == 'delivery':
                     qty_to_invoice = line.qty_delivered - line.qty_invoiced
                     if qty_to_invoice < 0:
