@@ -56,7 +56,7 @@ class StockPicking(models.Model):
         ctx.update({'type':'out_refund'})
         inv_data = order.with_context(ctx)._prepare_invoice() 
         refund_invoice = self.env['account.invoice'].with_context(ctx).create(inv_data)
-        message = _("Esta Nota de Credito ha sido creada desde : <a href=# data-oe-model=stock.picking data-oe-id=%d>%s</a>") % (self.id, self.number)
+        message = _("Esta Nota de Credito ha sido creada desde : <a href=# data-oe-model=stock.picking data-oe-id=%d>%s</a>") % (self.id, self.display_name)
         refund_invoice.message_post(body=message)
 
         for move in self.move_lines:
@@ -76,7 +76,7 @@ class StockPicking(models.Model):
         #TODO: Implementar memoria para saber que NCs estan asociadas a cada devolucion
         #hasta eso se reescribe la variable refunds para que no entre al if
         #refunds = order.invoice_ids.filtered(lambda x: x.type == 'out_refund')
-        refunds = invoice
+        refunds = refund_invoice
         if len(refunds) == 1:
             result['views'] = [(order.with_context(ctx).env.ref('account.invoice_form').id, 'form')]
             result['res_id'] = refunds.id

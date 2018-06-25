@@ -7,9 +7,9 @@ from datetime import date, datetime, timedelta
 import time
 import re
 
-class StockReturnPicking(models.TransientModel):
+class ReturnPicking(models.TransientModel):
     _inherit = "stock.return.picking"
-    
+     
     @api.model
     def default_get(self, fields):
         '''
@@ -24,17 +24,17 @@ class StockReturnPicking(models.TransientModel):
         res['is_sale_return'] = is_sale_return
         return res
     
-    @api.onchange('refund_invoice_state')
-    def onchange_refund_invoice_state(self):
-        '''
-        Al cambiar el invoice state reseteamos el valor de los campos nativos de v10 para que tengan un valor equivalente
-        '''
-        vals = {'value': {},'warning':{},'domain':{}}
-        to_refund_so = False
-        if self.refund_invoice_state in ['2binvoiced']:
-            to_refund_so = True
-        for move in self.product_return_moves:
-            move.to_refund_so = to_refund_so
+#     @api.onchange('refund_invoice_state')
+#     def onchange_refund_invoice_state(self):
+#         '''
+#         Al cambiar el invoice state reseteamos el valor de los campos nativos de v10 para que tengan un valor equivalente
+#         '''
+#         vals = {'value': {},'warning':{},'domain':{}}
+#         to_refund_so = False
+#         if self.refund_invoice_state in ['2binvoiced']:
+#             to_refund_so = True
+#         for move in self.product_return_moves:
+#             move.to_refund_so = to_refund_so
     
     @api.multi
     def _create_returns(self):
@@ -42,7 +42,7 @@ class StockReturnPicking(models.TransientModel):
         Pasamos el valor seleccionado en la variable 'refund_invoice_state' del wizard al picking
         (El valor to_refund_so ya fue pasado en cada linea)
         '''
-        new_picking_id, pick_type_id = super(StockReturnPicking, self)._create_returns()
+        new_picking_id, pick_type_id = super(ReturnPicking, self)._create_returns()
         new_picking = self.env['stock.picking'].browse([new_picking_id])
         new_picking.refund_invoice_state = self.refund_invoice_state
         return new_picking_id, pick_type_id
