@@ -7,6 +7,7 @@
             <field name="model">stock.return.picking</field>
             <field name="arch" type="xml">
                 <field name="quantity" position="after">
+                    <field name="move_id" readonly="1" groups="base.group_no_one"/>
                     <field name="to_refund_so" groups="base.group_no_one"/>
                 </field>
                 <field name="location_id" position="after">

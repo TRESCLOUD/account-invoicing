@@ -24,17 +24,17 @@ class ReturnPicking(models.TransientModel):
         res['is_sale_return'] = is_sale_return
         return res
     
-#     @api.onchange('refund_invoice_state')
-#     def onchange_refund_invoice_state(self):
-#         '''
-#         Al cambiar el invoice state reseteamos el valor de los campos nativos de v10 para que tengan un valor equivalente
-#         '''
-#         vals = {'value': {},'warning':{},'domain':{}}
-#         to_refund_so = False
-#         if self.refund_invoice_state in ['2binvoiced']:
-#             to_refund_so = True
-#         for move in self.product_return_moves:
-#             move.to_refund_so = to_refund_so
+    @api.onchange('refund_invoice_state')
+    def onchange_refund_invoice_state(self):
+        '''
+        Al cambiar el invoice state reseteamos el valor de los campos nativos de v10 para que tengan un valor equivalente
+        '''
+        vals = {'value': {},'warning':{},'domain':{}}
+        to_refund_so = False
+        if self.refund_invoice_state in ['2binvoiced']:
+            to_refund_so = True
+        for move in self.product_return_moves:
+            move.to_refund_so = to_refund_so
     
     @api.multi
     def _create_returns(self):
