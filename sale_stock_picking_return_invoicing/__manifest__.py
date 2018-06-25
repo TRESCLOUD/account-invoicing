@@ -11,9 +11,6 @@
         
         Autores:
             Ing. Andres Calle
-            Ing. Patricio Rangles
-            Ing. José Miguel Rivero
-            Ing. Santiago Orozco
             Ing. Víctor Salazar
     ''',
     'author': 'TRESCLOUD CIA LTDA',
@@ -28,7 +25,10 @@
         #Cron
         'data/ir_cron_scheduler_data.xml',
         #Data
-        'views/sale_view.xml'
+        'views/sale_view.xml',
+        'views/account_invoice_view.xml',
+        'views/stock_picking_view.xml',
+        'views/stock_return_picking_view.xml',
     ],
     'installable': True
 }

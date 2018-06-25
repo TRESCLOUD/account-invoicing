@@ -84,6 +84,7 @@ class SaleOrder(models.Model):
         Crea las notas de credito asociadas a las orden de venta.
         basado en el codigo de action_invoice_create. no se realiza super por que el metodo 
         tiene la logica de crear las lineas de la factura si la cantidad a reembolsar es diferente de cero.
+        Nota: Metodo deprecado temporalmente para crear NCs por cada devolucion en ventas (MA-1031)
         '''
         inv_obj = self.env['account.invoice']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -212,6 +213,16 @@ class SaleOrder(models.Model):
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'  
+
+    @api.multi
+    def _prepare_invoice_line(self, qty):
+        '''al crear la linea de nota de credito enlazamos las lineas de factura con los stock.move'''
+        vals = super(SaleOrderLine, self)._prepare_invoice_line(qty)
+        if self._context.get('refund_move_ids',False):
+            #cuando se emite nota de credito por devolucion en ventas
+            move_ids = self._context.get('refund_move_ids',False)
+            vals['refund_stock_move_ids'] = [(6, 0, move_ids)]
+        return vals
 
     @api.multi
     def _get_delivered_qty(self):

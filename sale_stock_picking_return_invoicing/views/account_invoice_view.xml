@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<!-- Vista form de facturas de clientes, enlazamos lineas de notas de credito a stock.move para costearlas -->
+	<record id="invoice_customer_form_stock" model="ir.ui.view">
+		<field name="name">invoice_line_form_stock</field>
+		<field name="model">account.invoice.line</field>
+		<field name="type">form</field>
+		<field name="priority">15</field>
+   	    <field name="inherit_id" ref="account.view_invoice_line_form"/>
+   		<field name="arch" type="xml">
+   			<xpath expr="//field[@name='name']" position="after">
+   				<label for="default_code"/>
+   				<field name="refund_stock_move_ids" groups="base.group_no_one"/>
+     		</xpath>
+		</field>
+   	 </record>
+</odoo>
