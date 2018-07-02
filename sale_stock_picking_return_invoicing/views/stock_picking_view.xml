@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+		<record id="view_stock_picking_form_sale_refunds" model="ir.ui.view">
+			<field name="name">view.stock.picking.form.sale.refunds</field>
+			<field name="model">stock.picking</field>
+			<field name="inherit_id" ref="stock.view_picking_form"/>
+			<field name="type">form</field>
+			<field name="arch" type="xml">
+				<xpath expr="//button[@name='button_scrap']" position="after">
+	     			<button name="action_refund_invoice"
+	     					string="Emitir Nota de Credito"
+							type="object" 
+							class="oe_inline"
+							attrs="{'invisible': ['|',('state','not in',('done')),('refund_invoice_state','not in',('2binvoiced'))]}"/>
+				</xpath>
+	            <xpath expr="//field[@name='scrapped']" position="after">
+	            	<!-- para depuracion hacemos visible si las devoluciones en ventas son elegibles para emitir nota de credito -->
+	                <field name="to_refund_so" groups="base.group_no_one"/>
+	            </xpath>
+				<xpath expr="//field[@name='picking_type_id']" position="after">
+	            	<field name="is_sale_return" readonly="True" groups="base.group_no_one"/>
+	            	<field name="refund_invoice_state" attrs="{'invisible':[('is_sale_return','=',False)]}"/>
+	            </xpath>
+			</field>
+		</record>
+    </data>
+</odoo>

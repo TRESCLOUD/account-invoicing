@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
 	<record id="view_order_form_refunds" model="ir.ui.view">
 		<field name="name">view.order.form.refunds</field>
 		<field name="model">sale.order</field>
 		<field name="inherit_id" ref="sale.view_order_form"/>
 		<field name="arch" type="xml">
-			<xpath expr="//button[@name='action_view_invoice']" position="after">
+			<!-- <xpath expr="//button[@name='action_view_invoice']" position="after">  -->
+			<xpath expr="//div[@name='button_box']" position="inside">
 				<button type="object" name="action_view_invoice_refund"
 					class="oe_stat_button" icon="fa-pencil-square-o"
-					attrs="{'invisible': [('invoice_count', '=', 0)]}">
+					attrs="{'invisible': [('invoice_refund_count', '=', 0)]}">
 					<field name="invoice_refund_count" widget="statinfo" string="Refunds"/>
 				</button>
 			</xpath>
@@ -33,5 +33,4 @@
 			</xpath> 
 		</field>
 	</record>
-
 </odoo>

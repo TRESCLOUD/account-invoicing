@@ -37,15 +37,18 @@ class SaleOrder(models.Model):
                 'invoice_count': len(set(invoice_ids.ids)),
                 'invoice_ids': invoice_ids.ids
             })
-                
+        
     @api.multi
     def action_view_invoice_refund(self):
         '''
-        Metodo llamana a la funcion de crear notas de credito en ventas, siempre que exista cantidad a reembolsar.
+        Visualiza las notas de credito asociadas a una factura
         '''
-        ctx = self._context.copy()
+        #computamos el id de la factura sobre la cual emito la NC
         invoice_ids = self.invoice_ids.filtered(lambda x: x.type == 'out_invoice' and x.state not in ('cancel','draft')).mapped('id')
+        ctx = self._context.copy()
+        ctx.update({'type':'out_refund'})
         ctx.update({'default_invoice_rectification_id': invoice_ids[0] if invoice_ids else []})
+        #consruyo el formulario o tree de respuesta
         action = self.env.ref('account.action_invoice_tree1')
         result = action.read()[0]
         result['domain']= [('type', '=', ('out_refund')),('partner_id','=', self.partner_id.id)]
@@ -53,15 +56,6 @@ class SaleOrder(models.Model):
             'type': 'out_refund',
             'default_sale_id': self.id
         }
-        for order in self:
-            create = False 
-            for line in order.order_line:
-                if line.qty_to_refund > 0:
-                    create = True
-                    break
-            if create:
-               ctx.update({'type':'out_refund'})
-               order.with_context(ctx).action_invoice_refund()
         refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
         if len(refunds) == 1:
             result['views'] = [(self.with_context(ctx).env.ref('account.invoice_form').id, 'form')]
@@ -90,6 +84,7 @@ class SaleOrder(models.Model):
         Crea las notas de credito asociadas a las orden de venta.
         basado en el codigo de action_invoice_create. no se realiza super por que el metodo 
         tiene la logica de crear las lineas de la factura si la cantidad a reembolsar es diferente de cero.
+        Nota: Metodo deprecado temporalmente para crear NCs por cada devolucion en ventas (MA-1031)
         '''
         inv_obj = self.env['account.invoice']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -218,6 +213,16 @@ class SaleOrder(models.Model):
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'  
+
+    @api.multi
+    def _prepare_invoice_line(self, qty):
+        '''al crear la linea de nota de credito enlazamos las lineas de factura con los stock.move'''
+        vals = super(SaleOrderLine, self)._prepare_invoice_line(qty)
+        if self._context.get('refund_move_ids',False):
+            #cuando se emite nota de credito por devolucion en ventas
+            move_ids = self._context.get('refund_move_ids',False)
+            vals['refund_stock_move_ids'] = [(6, 0, move_ids)]
+        return vals
 
     @api.multi
     def _get_delivered_qty(self):
