@@ -87,13 +87,14 @@ class StockPicking(models.Model):
     @api.one
     @api.depends('move_lines.origin_returned_move_id')
     def _compute_is_sale_return(self):
-        '''Cuando las lineas son de devolucion entonces la cabecera se marca como devolucion'''
+        '''Cuando las lineas son de DEVOLUCIONES de VENTAS entonces la cabecera se marca como devolucion'''
         is_return = False
         is_sale = False #si el movimiento esta asociado a una venta
-        if any(line.origin_returned_move_id for line in self.move_lines):
-            is_return = True
-        if any(line.procurement_id.sale_line_id for line in self.move_lines):
-            is_sale = True
+        if self.location_id.usage in ['customer']:
+            if any(line.origin_returned_move_id for line in self.move_lines):
+                is_return = True
+                if any(line.procurement_id.sale_line_id for line in self.move_lines):
+                    is_sale = True
         self.is_sale_return = is_return and is_sale
         
     is_sale_return = fields.Boolean(
