@@ -38,9 +38,9 @@ class SaleOrder(models.Model):
                 'invoice_count': len(set(invoice_ids.ids)),
                 'invoice_ids': invoice_ids.ids
             })
-            if self.force_state != 'automatic':
+            if order.force_state != 'automatic':
                  order.update({
-                'invoice_status': self.force_state 
+                'invoice_status': order.force_state 
             })
         
     @api.multi
