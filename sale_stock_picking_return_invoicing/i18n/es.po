@@ -69,3 +69,8 @@ msgstr "Cant. a entregar"
 #: model:ir.model,name:sale_stock_picking_return_invoicing.model_stock_return_picking_line
 msgid "stock.return.picking.line"
 msgstr "stock.return.picking.line"
+
+#. module: sale_stock_picking_return_invoicing
+#: model:ir.model.fields,field_description:sale_stock_picking_return_invoicing.field_sale_order_force_state
+msgid "To force state"
+msgstr "Forzar estado"

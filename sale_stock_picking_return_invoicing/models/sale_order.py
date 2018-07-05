@@ -29,6 +29,7 @@ class SaleOrder(models.Model):
     def _get_invoiced(self):
         '''
         obtiene el número de facturas asociados a la orden de venta.
+        Actualiza el campo estado factura.
         '''
         super(SaleOrder, self)._get_invoiced()
         for order in self:
@@ -36,6 +37,10 @@ class SaleOrder(models.Model):
             order.update({
                 'invoice_count': len(set(invoice_ids.ids)),
                 'invoice_ids': invoice_ids.ids
+            })
+            if self.force_state != 'automatic':
+                 order.update({
+                'invoice_status': self.force_state 
             })
         
     @api.multi
@@ -195,6 +200,32 @@ class SaleOrder(models.Model):
                 time.sleep(0.05) #nos detenemos 50 ms para no bloquear la bdd en produccion
         #self._cr.close()
         time_end = timer()
+    
+    @api.onchange('force_state','invoice_status')
+    def onchange_force_state(self):
+        '''
+        Modificamos el estado del invoice_status tanto en las cabecera
+        como en las lineas de la factura
+        '''
+        if self.force_state != 'automatic':
+            self.invoice_status = self.force_state
+            for line in self.mapped('order_line'):
+                line.invoice_status = self.force_state
+  
+    
+    def _get_selection_invoice_status(self):
+        '''
+        Asignamos las opciones del seleccion en base 
+        al campo invoice_status, ademas de , agregar el estado automatico.
+        '''
+        res = [('automatic', 'Automático')]
+        #TODO: solo deberian tener la opción de automatico y facturado.
+        #puede causar muchos errores en el futuro
+        res += self.env['sale.order'].fields_get(allfields=['invoice_status'])['invoice_status']['selection']
+        return res
+        
+    
+    _selection_invoice_status = lambda self: self._get_selection_invoice_status()
 
     #Columns
     reprocess_lines = fields.Boolean(
@@ -209,6 +240,14 @@ class SaleOrder(models.Model):
         default=0,
         help='',
         )
+    force_state = fields.Selection(
+        string='To force state',
+        selection=_selection_invoice_status,
+        track_visibility='onchange',
+        default='automatic',
+        help='Permite actualizar el campo Estado Factura.',
+    )
+
 
 
 class SaleOrderLine(models.Model):
@@ -328,7 +367,18 @@ class SaleOrderLine(models.Model):
                         qty_to_refund = 0.0
             line.qty_to_refund = qty_to_refund
             line.qty_to_invoice = qty_to_invoice
-
+    
+    @api.depends('state', 'product_uom_qty', 'qty_delivered', 'qty_to_invoice', 'qty_invoiced')
+    def _compute_invoice_status(self):
+        '''
+        By pass para forzar el estado de las lineas.
+        '''
+        if self.order_id.force_state != 'automatic':
+            for line in self:
+                line.invoice_status = self.order_id.force_state
+        else:
+            super(SaleOrderLine, self)._compute_invoice_status()
+    
     @api.depends('order_id.state', 'procurement_ids.move_ids.state')
     def _compute_qty_returned(self):
         '''
