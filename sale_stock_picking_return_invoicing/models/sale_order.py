@@ -373,9 +373,9 @@ class SaleOrderLine(models.Model):
         '''
         By pass para forzar el estado de las lineas.
         '''
-        if self.order_id.force_state != 'automatic':
+        if 'automatic' not in self.mapped('order_id.force_state'):
             for line in self:
-                line.invoice_status = self.order_id.force_state
+                line.invoice_status = line.order_id.force_state
         else:
             super(SaleOrderLine, self)._compute_invoice_status()
     
