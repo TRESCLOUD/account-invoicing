@@ -244,6 +244,7 @@ class SaleOrder(models.Model):
         string='To force state',
         selection=_selection_invoice_status,
         track_visibility='onchange',
+        copy=False,
         default='automatic',
         help='Permite actualizar el campo Estado Factura.',
     )

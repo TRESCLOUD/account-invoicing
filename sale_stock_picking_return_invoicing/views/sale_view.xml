@@ -29,6 +29,7 @@
 				<field name="qty_refunded"  invisible="context.get('hide_sale', False)"/>
 			</xpath> 
 			<xpath expr="//field[@name='effective_date']" position="after">
+				<label for="action_compute_sale_line_qty"/>
 				<button type="object" 
 						name="action_compute_sale_line_qty" 
 						string="Recompute fields in sale lines" 
