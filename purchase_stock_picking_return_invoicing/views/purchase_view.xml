@@ -28,6 +28,7 @@
                        invisible="not context.get('show_purchase', False)"/>
             </xpath>
             <xpath expr="//field[@name='picking_type_id']" position="before">
+            	<label for="action_compute_purchase_line_qty"/>
 				<button type="object" 
 						name="action_compute_purchase_line_qty" 
 						string="Recalcular lineas" 
