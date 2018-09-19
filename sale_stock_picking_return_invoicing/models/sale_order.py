@@ -407,6 +407,21 @@ class SaleOrderLine(models.Model):
         qty_invoiced -= self.qty_refunded
         return qty_invoiced
     
+    def _get_protected_fields(self):
+        '''
+        Bypass a la validacion al editar campos bloqueados solo en el caso
+        que se setee el campo forzar estado a "nada que factura".
+        
+        El metodo _get_protected_fields fue agregado en  las nuevas actualizaciones del 
+        core 2018-01-09.
+        '''
+        res = super(SaleOrderLine, self)._get_protected_fields()
+        #res = listado de campos bloqueados
+        if self.order_id and self.order_id._fields.get('force_state', False):
+            if self.order_id.force_state == 'no':
+                res = []
+        return res
+    
     #columns
     qty_delivered = fields.Float(
         help='Cantidad total entregada al cliente, se obtiene en base a la suma de la cantidad '
