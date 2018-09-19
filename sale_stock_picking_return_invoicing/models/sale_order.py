@@ -410,9 +410,9 @@ class SaleOrderLine(models.Model):
     def _get_protected_fields(self):
         '''
         Bypass a la validacion al editar campos bloqueados solo en el caso
-        que se setee el campo forzar estado a "nada que facturara".
+        que se setee el campo forzar estado a "nada que factura".
         
-        El metodo fue agregado en  las nuevas actualizaciones del 
+        El metodo _get_protected_fields fue agregado en  las nuevas actualizaciones del 
         core 2018-01-09.
         '''
         res = super(SaleOrderLine, self)._get_protected_fields()
