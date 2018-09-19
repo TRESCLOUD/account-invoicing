@@ -416,7 +416,7 @@ class SaleOrderLine(models.Model):
         core 2018-01-09.
         '''
         res = super(SaleOrderLine, self)._get_protected_fields()
-        #res = listado de campos a bloquear
+        #res = listado de campos bloqueados
         if self.order_id and self.order_id._fields.get('force_state', False):
             if self.order_id.force_state == 'no':
                 res = []
