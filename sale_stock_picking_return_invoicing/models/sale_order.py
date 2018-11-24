@@ -417,9 +417,10 @@ class SaleOrderLine(models.Model):
         '''
         res = super(SaleOrderLine, self)._get_protected_fields()
         #res = listado de campos bloqueados
-        if self.order_id and self.order_id._fields.get('force_state', False):
-            if self.order_id.force_state == 'no':
-                res = []
+        for line in self:
+            if line.order_id and line.order_id._fields.get('force_state', False):
+                if line.order_id.force_state == 'no':
+                    res = []
         return res
     
     #columns

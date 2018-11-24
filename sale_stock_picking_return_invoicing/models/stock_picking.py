@@ -38,7 +38,8 @@ class StockPicking(models.Model):
         '''
         self.ensure_one() #al momento esta implementado para un solo documento
         if not self.is_sale_return:
-            raise ValidationError(u'Solo se puede emitir notas de credito para DEVOLUCIONES EN VENTAS')
+            raise ValidationError(u'Desde este boton solo se puede emitir notas de credito para DEVOLUCIONES EN VENTAS, '
+                                  u'para COMPRAS aplaste el boton "Notas de Credito" de la orden de compra')
         if self.refund_invoice_state not in ['2binvoiced']:
             raise ValidationError(u'Solo se puede emitir notas de credito para devoluciones pendientes')
         #obtenemos las ventas
