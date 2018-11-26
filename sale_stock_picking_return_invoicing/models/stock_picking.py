@@ -45,7 +45,7 @@ class StockPicking(models.Model):
         #obtenemos las ventas
         sale_orders = self.move_lines.mapped('procurement_id').mapped('sale_line_id').mapped('order_id')
         pos_orders = False
-        if self.env['ir.module.module'].search([('name','=','point_of_sale'),('state','=','installed')]):
+        if self.env['ir.module.module'].sudo().search([('name','=','point_of_sale'),('state','=','installed')]):
             #si el TPV esta instalado evaluamos si el picking es de tpv
             pos_orders = self.env['pos.order'].search([('picking_id','=',self.move_lines[0].origin_returned_move_id.picking_id.id)])
         if not sale_orders and not pos_orders:
@@ -126,7 +126,8 @@ class StockPicking(models.Model):
     is_sale_return = fields.Boolean(
         'Is return',
         compute='_compute_is_sale_return',
-        help='Technical field, to hide/show refund option, indicates when a delivery is a sales return'
+        compute_sudo=True,
+        help='Technical field, to hide/show refund option, indicates when a delivery is a sales return',
         )
     
     refund_invoice_state = fields.Selection(
