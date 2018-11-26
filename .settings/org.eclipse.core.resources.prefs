@@ -6,3 +6,4 @@ encoding//account_invoice_kanban/models/account_invoice.py=utf-8
 encoding//account_invoice_kanban/tests/__init__.py=utf-8
 encoding//sale_stock_picking_return_invoicing/__manifest__.py=utf-8
 encoding//sale_stock_picking_return_invoicing/models/sale_order.py=utf-8
+encoding//sale_stock_picking_return_invoicing/models/stock_picking.py=utf-8
