@@ -68,7 +68,7 @@ class SaleOrder(models.Model):
         }
         refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
         # Agregamos las otras notas de credito que no enlazan las lineas
-        refunds |= self.env['account.invoice'].browse(invoice_ids).invoice_rectification_ids.filtered(
+        refunds |= self.env['account.invoice'].browse(invoice_ids).mapped('invoice_rectification_ids').filtered(
             lambda x: x.type == 'out_refund'
         )
         if len(refunds) == 1:
