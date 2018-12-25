@@ -23,6 +23,11 @@ class SaleOrder(models.Model):
              invoices = self.env['account.invoice']
              for line in order.order_line:
                  invoices |= line.invoice_lines.mapped('invoice_id').filtered(lambda x: x.type == 'out_refund')
+                 # Incluimos en la cuenta todas las notas de credito que
+                 # no se enlazan directamente con las linea de la factura
+                 invoices |= line.invoice_lines.mapped('invoice_id').\
+                     mapped('invoice_rectification_ids').\
+                     filtered(lambda x: x.type == 'out_refund')
              order.invoice_refund_count = len(invoices)
                           
     @api.depends('state', 'order_line.invoice_status')
@@ -62,6 +67,10 @@ class SaleOrder(models.Model):
             'default_sale_id': self.id
         }
         refunds = self.invoice_ids.filtered(lambda x: x.type == 'out_refund')
+        # Agregamos las otras notas de credito que no enlazan las lineas
+        refunds |= self.env['account.invoice'].browse(invoice_ids).mapped('invoice_rectification_ids').filtered(
+            lambda x: x.type == 'out_refund'
+        )
         if len(refunds) == 1:
             result['views'] = [(self.with_context(ctx).env.ref('account.invoice_form').id, 'form')]
             result['res_id'] = refunds.id
