@@ -115,7 +115,7 @@ class StockPicking(models.Model):
                 if any(line.procurement_id.sale_line_id for line in self.move_lines):
                     #Devoluciones de ordenes de venta
                     is_sale = True
-                elif self.env['ir.module.module'].search([('name','=','point_of_sale'),('state','=','installed')]):
+                elif self.env['ir.module.module'].suspend_security().search([('name','=','point_of_sale'),('state','=','installed')]):
                     #si el TPV esta instalado evaluamos si el picking es de tpv
                     if self.env['pos.order'].search([('picking_id','=',self.move_lines[0].origin_returned_move_id.picking_id.id)]):
                         #Devoluciones de ordenes de punto de venta, las buscamos
