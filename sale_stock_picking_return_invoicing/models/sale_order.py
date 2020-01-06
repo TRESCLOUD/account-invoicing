@@ -84,7 +84,7 @@ class SaleOrder(models.Model):
         Filtar las facturas de tipo out_invoice
         '''
         result = super(SaleOrder, self).action_view_invoice()
-        invoices = self.invoice_ids.filtered(lambda x: x.type == 'out_invoice')
+        invoices = self.mapped('invoice_ids').filtered(lambda x: x.type == 'out_invoice')
         if len(invoices) > 1:
             result['domain'] = [('id', 'in', invoices.ids)]
         elif len(invoices) == 1:
