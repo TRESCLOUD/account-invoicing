@@ -128,6 +128,7 @@ class PurchaseOrder(models.Model):
         """
         for purchase in self.with_context(recompute=False):
             for line in purchase.order_line:
+                line._compute_qty_returned()
                 line._compute_qty_received()
                 line._compute_qty_invoiced()
                 line._compute_qty_to_invoice()
@@ -254,11 +255,19 @@ class PurchaseOrderLine(models.Model):
     )
     def _compute_qty_returned(self):
         '''
-         Obtiene la cantidad devuelta en base al movimientos de inventario.
+        Obtiene la cantidad devuelta en base al movimientos de inventario.
+        * se incluye movimientos extras de las cantidades a retornar.
         '''
         for line in self:
             qty = 0.0
             moves = line.mapped('move_ids.returned_move_ids')
+            returned_ids = moves.mapped('picking_id')
+            move_extras = returned_ids.mapped('move_lines').filtered(
+                                lambda x: x.state == 'done'
+                                        and x.product_id == line.product_id
+                                        and x.purchase_line_id == moves.mapped('purchase_line_id')
+                                )
+            moves |= move_extras
             for move in moves.filtered(lambda x: x.state == 'done'):
                 if move.location_id.usage != 'supplier':
                     qty += move.product_uom._compute_quantity(
@@ -266,7 +275,7 @@ class PurchaseOrderLine(models.Model):
                     )
             line.qty_returned = qty
 
-    @api.depends('qty_returned')
+    @api.depends('order_id.state', 'move_ids.state', 'qty_returned')
     def _compute_qty_received(self):
         """Substract returned quantity from received one, as super sums
         only direct moves, and we want to reflect here the actual received qty.
