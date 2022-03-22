@@ -1,21 +1,21 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # * account_invoice_merge
-# 
+#
 # Translators:
 # OCA Transbot <transbot@odoo-community.org>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 10.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-01 02:38+0000\n"
-"PO-Revision-Date: 2017-06-01 02:38+0000\n"
+"POT-Creation-Date: 2017-11-23 13:51+0000\n"
+"PO-Revision-Date: 2017-11-23 13:51+0000\n"
 "Last-Translator: OCA Transbot <transbot@odoo-community.org>, 2017\n"
 "Language-Team: Italian (https://www.transifex.com/oca/teams/23907/it/)\n"
+"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
-"Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. module: account_invoice_merge
@@ -32,7 +32,7 @@ msgstr "Almeno una delle fatture selezionate è %s!"
 #. module: account_invoice_merge
 #: model:ir.ui.view,arch_db:account_invoice_merge.view_invoice_merge
 msgid "Cancel"
-msgstr "Annulla"
+msgstr "Cancella"
 
 #. module: account_invoice_merge
 #: model:ir.model.fields,field_description:account_invoice_merge.field_invoice_merge_create_uid
@@ -42,7 +42,7 @@ msgstr "Creato da"
 #. module: account_invoice_merge
 #: model:ir.model.fields,field_description:account_invoice_merge.field_invoice_merge_create_date
 msgid "Created on"
-msgstr "Creato da"
+msgstr "Creato il"
 
 #. module: account_invoice_merge
 #: model:ir.model.fields,field_description:account_invoice_merge.field_invoice_merge_display_name
@@ -140,7 +140,8 @@ msgid ""
 "                        * Invoices are in state 'draft'.<br/>\n"
 "                        * Invoices belong to the same partner.<br/>\n"
 "                        * Invoices have the same company, partner, address,\n"
-"                        currency, journal, salesman, account and type.<br/><br/>\n"
+"                        currency, journal, salesman, account and type.<br/"
+"><br/>\n"
 "                        Lines will only be merged if:<br/>\n"
 "                        * Invoice lines are exactly the same except for the\n"
 "                        product, quantity and unit.<br/>"
